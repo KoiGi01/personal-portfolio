@@ -163,6 +163,7 @@
         }
         .hero-btns { display: flex; gap: 1.5rem; flex-wrap: wrap; position: relative; z-index: 20;}
         .btn-red {
+            display: inline-block;
             font-family: var(--mono); font-size: 0.8rem; letter-spacing: 0.1em; font-weight: 600;
             padding: 1.2rem 3rem; background: var(--red); color: #fff; border: 1px solid var(--red);
             cursor: pointer; text-decoration: none; transition: all 0.35s; position: relative; overflow: hidden;
@@ -175,6 +176,7 @@
         .btn-red:hover { box-shadow: 0 6px 20px rgba(212,25,32,0.3); transform: translateY(-3px); }
         .btn-red:hover::before { transform: translateX(100%); }
         .btn-outline {
+            display: inline-block;
             font-family: var(--mono); font-size: 0.8rem; letter-spacing: 0.1em; font-weight: 600;
             padding: 1.2rem 3rem; background: transparent; color: #fff;
             border: 1px solid rgba(255,255,255,0.3); cursor: pointer; text-decoration: none; transition: all 0.35s;
@@ -483,7 +485,7 @@
             <div class="hero-tag"><span class="line"></span>AI EVALUATION SPECIALIST</div>
             <h1 class="hero-h1">Juan Luis<br><span class="outline-text">Medina</span> Lozano</h1>
             <div class="hero-sub">ADVERSARIAL TESTING <span class="dot">·</span> RLHF <span class="dot">·</span> CODE ASSESSMENT</div>
-            <p class="hero-desc">AI operations and evaluation specialist with hands-on experience across the full frontier model development pipeline, from adversarial red-teaming and reinforcement learning evaluation to annotator onboarding, team leadership, and training data quality assurance. Promoted to team lead within Outlier AI’s LATAM Coding division, managing a team of 15 annotators through onboarding, performance evaluation, and guideline alignment. I bring a combination of deep technical AI proficiency and strong people management instincts, shaped further by a background in B2B sales team coaching and real-time, high-stakes communication. Comfortable leading distributed teams, building structured workflows from scratch, and operating independently across time zones. Native bilingual in English and Spanish.</p>
+            <p class="hero-desc">AI operations and evaluation specialist with hands-on experience across the full frontier model development pipeline. Experienced in adversarial red-teaming, RLHF evaluation, and leading annotator teams at Outlier AI and Mercor. Bridging deep technical proficiency, strong people management instincts, and real-time communication to drive data quality and safety across training workflows.</p>
             <div class="hero-btns">
                 <a href="#experience" class="btn-red">VIEW WORK →</a>
                 <a href="#contact" class="btn-outline">GET IN TOUCH</a>
@@ -784,19 +786,13 @@
                 </div>
             </div>
             <div>
-                <h3 class="proj-name">OpenClaw RL</h3>
-                <div class="proj-type">AGENTIC AI EVALUATION @ OUTLIER AI</div>
+                <h3 class="proj-name">Trading Assistant</h3>
+                <div class="proj-type">PERSONAL PROJECT</div>
                 <div class="proj-desc">
-                    <p style="margin-bottom: 1rem;">Design and execute complex, multi-stage agentic evaluation tasks for OpenClaw, Anthropic’s autonomous AI agent, benchmarking LLM performance across reliability, tool coordination, instruction adherence, and multi-system reasoning.</p>
-                    <ul style="list-style: none;">
-                        <li style="position: relative; padding-left: 1.5rem; margin-bottom: 0.5rem;"><span style="position: absolute; left: 0; color: var(--red);">›</span> Authors complete task briefs — agent objectives, core functionalities, build complexity specifications, and verifiable desired outcomes — grounded in real-world use cases and HEART domain alignment.</li>
-                        <li style="position: relative; padding-left: 1.5rem; margin-bottom: 0.5rem;"><span style="position: absolute; left: 0; color: var(--red);">›</span> Annotates agent safety failures across 7 target domains (high-stakes actions, private data handling, prompt injections, jailbreaks, contextual risk, and more) using a structured failure taxonomy with action-tier classification.</li>
-                        <li style="position: relative; padding-left: 1.5rem; margin-bottom: 0.5rem;"><span style="position: absolute; left: 0; color: var(--red);">›</span> Designs binary, outcome-based evaluation rubrics and writes pytest unit tests (verifier.py) to validate task completion against live system state snapshots — not just trajectory inspection.</li>
-                        <li style="position: relative; padding-left: 1.5rem;"><span style="position: absolute; left: 0; color: var(--red);">›</span> Selects and iteratively refines silver trajectories, guiding the best-performing model through corrections until all rubric criteria are fully satisfied.</li>
-                    </ul>
+                    <p>Architected an agentic OpenClaw based assistant using Node.js, the Capital.com REST API, and Claude API. Runs on a daily cron job, cross-references my live portfolio positions against breaking financial news, and delivers trade recommendations via WhatsApp (Twilio) with an approve/reject execution loop.</p>
                 </div>
                 <div class="proj-stack">
-                    <span>Python</span><span>pytest</span><span>Agentic Frameworks</span><span>LLM Coordination</span>
+                    <span>Node.js</span><span>Capital.com API</span><span>Twilio / WhatsApp</span><span>Claude API</span><span>OpenClaw</span>
                 </div>
             </div>
         </div>
