@@ -175,7 +175,7 @@
         @keyframes scrollPulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
 
         /* ═══════════════════════════════════════
-           WINDOW PANEL COMPONENT
+           WINDOW PANEL COMPONENT (bento only)
            ═══════════════════════════════════════ */
         .window {
             background: rgba(0,0,0,0.7);
@@ -197,45 +197,137 @@
         .window-body { padding: 24px; }
 
         /* ═══════════════════════════════════════
-           EXPERIENCE SCROLLYTELLING
+           EXPERIENCE — INTERACTIVE TIMELINE
            ═══════════════════════════════════════ */
         #experience { position: relative; }
         .exp-sticky {
             height: 100vh; width: 100%;
-            display: flex; align-items: center;
-            padding: 0 4vw; position: relative;
+            display: flex; flex-direction: column;
+            justify-content: flex-start;
+            padding: 0 6vw; padding-top: 60px;
+            position: relative;
+            overflow: hidden;
         }
-        .exp-counter {
-            position: absolute; top: 3.5rem; left: 4vw;
-            font-size: 0.6rem; letter-spacing: 0.2em; color: var(--g2);
+
+        /* Timeline scrubber bar at top */
+        .timeline-bar {
+            position: relative;
+            width: 100%;
+            height: 1px;
+            background: var(--g3);
+            margin-top: 20px;
+            margin-bottom: 0;
+            flex-shrink: 0;
         }
-        .exp-panel {
-            position: absolute; left: 4vw; top: 50%; transform: translateY(-50%);
-            width: 520px; max-width: 45vw;
-            opacity: 0; visibility: hidden;
+        .timeline-bar::before, .timeline-bar::after {
+            position: absolute; top: -18px;
+            font-size: 0.55rem; letter-spacing: 0.15em; color: var(--g2);
         }
-        .exp-panel .window-body h3 {
-            font-size: 1.8rem; font-weight: 700; margin-bottom: 0.25rem; line-height: 1.2;
+        .timeline-bar::before { content: 'FEB 2024'; left: 0; }
+        .timeline-bar::after { content: 'PRESENT'; right: 0; }
+        .timeline-playhead {
+            position: absolute; top: -3px; left: 0%;
+            width: 7px; height: 7px; border-radius: 50%;
+            background: var(--white);
+            box-shadow: 0 0 12px rgba(255,255,255,0.6), 0 0 30px rgba(255,255,255,0.2);
+            transition: left 0.1s linear;
         }
-        .exp-panel .window-body .role {
-            font-size: 0.75rem; letter-spacing: 0.15em; color: var(--g2); margin-bottom: 2rem;
+        .timeline-date {
+            position: absolute; top: 12px; left: 0%;
+            font-size: 0.65rem; letter-spacing: 0.1em; color: var(--white);
+            transform: translateX(-50%);
+            font-weight: 500;
+            white-space: nowrap;
         }
-        .exp-panel .window-body .date {
-            font-size: 0.65rem; color: var(--g2); margin-bottom: 1.5rem; letter-spacing: 0.15em;
+
+        /* Job entries container */
+        .timeline-jobs {
+            display: flex; flex-direction: column; gap: 0;
+            margin-top: 40px;
+            max-width: 520px;
+            flex: 1;
+            overflow-y: auto;
+            scrollbar-width: none;
         }
-        .exp-panel .window-body ul { list-style: none; margin-bottom: 2rem; }
-        .exp-panel .window-body li {
-            position: relative; padding-left: 1.6rem; margin-bottom: 1.1rem;
-            font-size: 0.8rem; line-height: 1.7; color: var(--g1); font-weight: 300;
+        .timeline-jobs::-webkit-scrollbar { display: none; }
+
+        .job-entry {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: max-height 0.7s ease, opacity 0.5s ease, padding 0.7s ease;
+            padding: 0;
         }
-        .exp-panel .window-body li::before {
-            content: '›'; position: absolute; left: 0; color: var(--white); font-weight: 700; font-size: 1.1rem;
+        .job-entry.active {
+            max-height: 600px;
+            opacity: 1;
+            padding: 1.2rem 0;
+            border-bottom: 1px solid var(--g4);
         }
-        .exp-tags { display: flex; gap: 8px; flex-wrap: wrap; }
-        .exp-tags span {
-            font-size: 0.6rem; letter-spacing: 0.1em;
-            padding: 5px 10px; border: 1px solid var(--g3); color: var(--g2);
+        .job-entry.ended {
+            max-height: 0;
+            opacity: 0;
+            padding: 0;
+            overflow: hidden;
+            pointer-events: none;
         }
+        .job-company {
+            font-size: clamp(1.4rem, 2.5vw, 2.2rem);
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+            margin-bottom: 0.3rem;
+        }
+        .job-role {
+            font-size: 0.7rem;
+            letter-spacing: 0.2em;
+            color: var(--g2);
+            margin-bottom: 1.2rem;
+            text-transform: uppercase;
+        }
+        .job-date {
+            font-size: 0.6rem;
+            letter-spacing: 0.15em;
+            color: var(--g2);
+            margin-bottom: 1rem;
+        }
+        .job-date .active-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border: 1px solid rgba(255,255,255,0.25);
+            font-size: 0.5rem;
+            letter-spacing: 0.2em;
+            margin-left: 8px;
+            color: var(--white);
+        }
+        .job-bullets {
+            list-style: none;
+            margin-bottom: 1.2rem;
+        }
+        .job-bullets li {
+            position: relative;
+            padding-left: 1.4rem;
+            margin-bottom: 0.8rem;
+            font-size: 0.78rem;
+            line-height: 1.7;
+            color: var(--g1);
+            font-weight: 300;
+        }
+        .job-bullets li::before {
+            content: '›';
+            position: absolute; left: 0;
+            color: var(--white);
+            font-weight: 700;
+            font-size: 1rem;
+        }
+        .job-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+        .job-tags span {
+            font-size: 0.55rem; letter-spacing: 0.1em;
+            padding: 4px 10px; border: 1px solid var(--g3); color: var(--g2);
+        }
+
+        /* Separator between stacked active jobs */
+        .job-entry + .job-entry.active { border-top: 1px solid var(--g4); padding-top: 2.5rem; }
 
         /* ═══════════════════════════════════════
            PROJECTS BENTO GRID
@@ -301,18 +393,26 @@
             height: 100%; background: var(--white);
             transition: width 1.5s ease;
         }
+        .exp-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+        .exp-tags span {
+            font-size: 0.6rem; letter-spacing: 0.1em;
+            padding: 5px 10px; border: 1px solid var(--g3); color: var(--g2);
+        }
 
         /* ═══════════════════════════════════════
-           CAPABILITIES: DIAGNOSTICS PANEL
+           CAPABILITIES — FREE FLOATING
            ═══════════════════════════════════════ */
-        #capabilities { padding: 12vh 4vw; }
+        #capabilities { padding: 14vh 4vw; }
+        .cap-label {
+            font-size: 0.6rem; letter-spacing: 0.3em; color: var(--g2); margin-bottom: 4rem;
+        }
         .diag-grid {
             display: grid; grid-template-columns: 1fr 1fr;
             gap: 0; max-width: 1100px;
         }
         .diag-section { padding: 2rem 2.5rem; font-size: 0.75rem; }
-        .diag-section:nth-child(odd) { border-right: 1px solid var(--g3); }
-        .diag-section:nth-child(n+3) { border-top: 1px solid var(--g3); }
+        .diag-section:nth-child(odd) { border-right: 1px solid var(--g4); }
+        .diag-section:nth-child(n+3) { border-top: 1px solid var(--g4); }
         .diag-title {
             font-size: 0.6rem; letter-spacing: 0.25em; color: var(--g2); margin-bottom: 1.5rem;
         }
@@ -321,19 +421,26 @@
             padding: 6px 0; font-size: 0.72rem; color: var(--g1);
         }
         .diag-row span { color: var(--g2); font-size: 0.6rem; letter-spacing: 0.1em; }
-        .diag-full { grid-column: 1 / 3; border-top: 1px solid var(--g3); }
+        .diag-full { grid-column: 1 / 3; border-top: 1px solid var(--g4); }
 
         /* ═══════════════════════════════════════
-           CONTACT TERMINAL
+           CONTACT — FREE FLOATING
            ═══════════════════════════════════════ */
         #contact {
             padding: 15vh 4vw; display: flex;
+            flex-direction: column;
             justify-content: center; align-items: center;
             min-height: 70vh;
         }
-        .contact-window { width: 560px; max-width: 90vw; }
+        .contact-heading {
+            font-size: 0.6rem; letter-spacing: 0.3em; color: var(--g2); 
+            margin-bottom: 4rem; text-align: center;
+        }
+        .contact-grid {
+            width: 520px; max-width: 90vw;
+        }
         .contact-line {
-            font-size: 0.75rem; line-height: 2.5; color: var(--g2);
+            font-size: 0.75rem; line-height: 2.8; color: var(--g2);
         }
         .contact-line .key {
             display: inline-block; width: 100px; color: var(--g2);
@@ -343,6 +450,10 @@
             border-bottom: 1px solid transparent; transition: all 0.3s;
         }
         .contact-line a:hover { color: #fff; border-bottom-color: #fff; }
+        .contact-meta {
+            margin-top: 3rem; font-size: 0.6rem; color: var(--g2);
+            letter-spacing: 0.15em; line-height: 2.2;
+        }
 
         /* ═══════════════════════════════════════
            FOOTER
@@ -364,15 +475,15 @@
         @media (max-width: 1024px) {
             .nav-links { display: none; }
             .hero-name { font-size: 3rem; }
-            .exp-panel { max-width: 85vw; width: 100%; }
             .bento { grid-template-columns: 1fr; grid-template-rows: auto; }
             .bento-openclaw { grid-row: auto; }
             .diag-grid { grid-template-columns: 1fr; }
             .diag-section:nth-child(odd) { border-right: none; }
-            .diag-section:nth-child(n+2) { border-top: 1px solid var(--g3); }
+            .diag-section:nth-child(n+2) { border-top: 1px solid var(--g4); }
             .diag-full { grid-column: auto; }
             #cursor { display: none; }
             body { cursor: auto; }
+            .timeline-jobs { max-width: 85vw; }
         }
     </style>
 </head>
@@ -385,7 +496,7 @@
         <div class="scan-line"></div>
         <div id="boot-text">
             <span>[SYS] INITIALIZING DATASCAPE v2.1.0</span>
-            <span>[SYS] LOADING VERTEX BUFFER ... <span class="highlight">15,000 POINTS</span></span>
+            <span>[SYS] LOADING VERTEX BUFFER ... <span class="highlight">8,000 POINTS</span></span>
             <span>[SYS] RENDERING PARTICLE ENGINE</span>
             <span>[SYS] ESTABLISHING SECURE CONNECTION</span>
             <span>[SYS] OPERATOR: <span class="highlight">JUAN LUIS MEDINA LOZANO</span></span>
@@ -394,18 +505,14 @@
         </div>
     </div>
 
-    <!-- ╔══════════════════════════════════════╗
-         ║          CUSTOM CURSOR               ║
-         ╚══════════════════════════════════════╝ -->
+    <!-- CURSOR -->
     <div id="cursor">
         <div class="ch ch-h"></div>
         <div class="ch ch-v"></div>
         <div class="ch-dot"></div>
     </div>
 
-    <!-- ╔══════════════════════════════════════╗
-         ║          HUD OVERLAY                 ║
-         ╚══════════════════════════════════════╝ -->
+    <!-- HUD -->
     <div id="hud-frame">
         <div class="hud-corner tl"></div>
         <div class="hud-corner tr"></div>
@@ -418,14 +525,10 @@
     <div class="hud-label hud-br" id="hud-section">[BOOT]</div>
     <div id="scroll-track"><div id="scroll-thumb"></div></div>
 
-    <!-- ╔══════════════════════════════════════╗
-         ║          THREE.JS CANVAS             ║
-         ╚══════════════════════════════════════╝ -->
+    <!-- THREE.JS -->
     <div id="gl-canvas"></div>
 
-    <!-- ╔══════════════════════════════════════╗
-         ║          NAVIGATION                  ║
-         ╚══════════════════════════════════════╝ -->
+    <!-- NAV -->
     <nav id="main-nav">
         <div class="logo">◇ JL.MEDINA</div>
         <div class="nav-links">
@@ -450,83 +553,63 @@
             </div>
         </section>
 
-        <!-- ════════ EXPERIENCE: SCROLLYTELLING ════════ -->
-        <section id="experience" style="height: 500vh;">
+        <!-- ════════ EXPERIENCE: INTERACTIVE TIMELINE ════════ -->
+        <section id="experience" style="height: 600vh;">
             <div class="exp-sticky" id="exp-sticky">
-                <div class="exp-counter" id="exp-counter">01 / 04 — DOSSIER</div>
-
-                <!-- Panel 0: Mercor -->
-                <div class="exp-panel window" id="exp-0">
-                    <div class="window-bar">
-                        <span>Dossier — Mercor</span>
-                        <div class="window-dots"><span></span><span></span></div>
-                    </div>
-                    <div class="window-body">
-                        <div class="date">JAN 2026 — PRESENT</div>
-                        <h3>Mercor</h3>
-                        <div class="role">AI RED-TEAMER</div>
-                        <ul>
-                            <li>Executes adversarial safety evaluations against frontier AI models — jailbreaks, prompt injection, boundary testing, and multimodal attacks.</li>
-                            <li>Develops structured vulnerability taxonomies, generates adversarial datasets, and builds actionable threat models.</li>
-                            <li>Delivers after-action risk reports with production-grade remediation strategies.</li>
-                        </ul>
-                        <div class="exp-tags"><span>ADVERSARIAL</span><span>THREAT MODELING</span><span>SAFETY</span></div>
-                    </div>
+                <!-- Timeline scrubber -->
+                <div class="timeline-bar">
+                    <div class="timeline-playhead" id="tl-playhead"></div>
+                    <div class="timeline-date" id="tl-date">FEB 2024</div>
+                    <!-- Tick marks will be generated via JS -->
                 </div>
 
-                <!-- Panel 1: Outlier Code -->
-                <div class="exp-panel window" id="exp-1">
-                    <div class="window-bar">
-                        <span>Dossier — Outlier AI</span>
-                        <div class="window-dots"><span></span><span></span></div>
-                    </div>
-                    <div class="window-body">
-                        <div class="date">JUL 2025 — PRESENT</div>
-                        <h3>Outlier AI</h3>
-                        <div class="role">AI CODE EVALUATOR</div>
-                        <ul>
-                            <li>Evaluates AI-generated code across Python, JavaScript/TS, C#, and Java against complex instruction-following rubrics.</li>
-                            <li>Writes atomic evaluation criteria and golden responses to calibrate model training baselines.</li>
-                            <li>Operates within OpenClaw structured evaluation and quality workflows.</li>
+                <!-- Job entries — all hidden initially, JS controls visibility -->
+                <div class="timeline-jobs" id="timeline-jobs">
+                    <div class="job-entry" id="job-ccc" data-start="2024.17" data-end="2025.33">
+                        <div class="job-date">FEB 2024 — APR 2025</div>
+                        <div class="job-company">Country Credit Club</div>
+                        <div class="job-role">Sales Quality Specialist</div>
+                        <ul class="job-bullets">
+                            <li>Conducted high-volume B2B outbound operations; promoted to a quality assurance role delivering performance reviews to a team of 4.</li>
+                            <li>Evolved pitch strategies from observed conversion metrics and managed follow-up pipelines.</li>
                         </ul>
-                        <div class="exp-tags"><span>CODE QA</span><span>RLHF</span><span>PYTHON</span><span>OPENCLAW</span></div>
+                        <div class="job-tags"><span>B2B OPS</span><span>QUALITY ASSURANCE</span><span>ANALYTICS</span></div>
                     </div>
-                </div>
 
-                <!-- Panel 2: Outlier LATAM -->
-                <div class="exp-panel window" id="exp-2">
-                    <div class="window-bar">
-                        <span>Dossier — Outlier AI (LATAM)</span>
-                        <div class="window-dots"><span></span><span></span></div>
-                    </div>
-                    <div class="window-body">
-                        <div class="date">2024 — 2025 &nbsp; [PROMOTED]</div>
-                        <h3>Outlier AI</h3>
-                        <div class="role">SQUAD REVIEWER & LANGUAGE TRAINER</div>
-                        <ul>
+                    <div class="job-entry" id="job-latam" data-start="2024.50" data-end="2025.50">
+                        <div class="job-date">MID 2024 — MID 2025 &nbsp; <span class="active-badge">PROMOTED</span></div>
+                        <div class="job-company">Outlier AI</div>
+                        <div class="job-role">Squad Reviewer & Language Trainer</div>
+                        <ul class="job-bullets">
                             <li>Oversaw onboarding for a cohort of ~15 annotators, hosted alignment webinars on quality standards and platform navigation.</li>
                             <li>Evaluated new hires' first task submissions to determine project eligibility with structured feedback cycles.</li>
                             <li>Co-authored annotator guidelines documentation aligned to strict client constraints.</li>
                         </ul>
-                        <div class="exp-tags"><span>LEADERSHIP</span><span>QUALITY COACHING</span><span>DOCUMENTATION</span></div>
+                        <div class="job-tags"><span>LEADERSHIP</span><span>QUALITY COACHING</span><span>DOCUMENTATION</span></div>
                     </div>
-                </div>
 
-                <!-- Panel 3: Country Credit Club -->
-                <div class="exp-panel window" id="exp-3">
-                    <div class="window-bar">
-                        <span>Dossier — Country Credit Club</span>
-                        <div class="window-dots"><span></span><span></span></div>
-                    </div>
-                    <div class="window-body">
-                        <div class="date">FEB 2024 — APR 2025 &nbsp; [PROMOTED]</div>
-                        <h3>Country Credit Club</h3>
-                        <div class="role">SALES QUALITY SPECIALIST</div>
-                        <ul>
-                            <li>Conducted high-volume B2B outbound operations; promoted to a quality assurance role delivering performance reviews to a team of 4.</li>
-                            <li>Evolved pitch strategies from observed conversion metrics and managed follow-up pipelines.</li>
+                    <div class="job-entry" id="job-outlier" data-start="2025.58" data-end="9999">
+                        <div class="job-date">JUL 2025 — PRESENT &nbsp; <span class="active-badge">ACTIVE</span></div>
+                        <div class="job-company">Outlier AI</div>
+                        <div class="job-role">AI Code Evaluator</div>
+                        <ul class="job-bullets">
+                            <li>Evaluates AI-generated code across Python, JavaScript/TS, C#, and Java against complex instruction-following rubrics.</li>
+                            <li>Writes atomic evaluation criteria and golden responses to calibrate model training baselines.</li>
+                            <li>Operates within OpenClaw structured evaluation and quality workflows.</li>
                         </ul>
-                        <div class="exp-tags"><span>B2B OPS</span><span>QUALITY ASSURANCE</span><span>ANALYTICS</span></div>
+                        <div class="job-tags"><span>CODE QA</span><span>RLHF</span><span>PYTHON</span><span>OPENCLAW</span></div>
+                    </div>
+
+                    <div class="job-entry" id="job-mercor" data-start="2026.08" data-end="9999">
+                        <div class="job-date">JAN 2026 — PRESENT &nbsp; <span class="active-badge">ACTIVE</span></div>
+                        <div class="job-company">Mercor</div>
+                        <div class="job-role">AI Red-Teamer</div>
+                        <ul class="job-bullets">
+                            <li>Executes adversarial safety evaluations against frontier AI models — jailbreaks, prompt injection, boundary testing, and multimodal attacks.</li>
+                            <li>Develops structured vulnerability taxonomies, generates adversarial datasets, and builds actionable threat models.</li>
+                            <li>Delivers after-action risk reports with production-grade remediation strategies.</li>
+                        </ul>
+                        <div class="job-tags"><span>ADVERSARIAL</span><span>THREAT MODELING</span><span>SAFETY</span></div>
                     </div>
                 </div>
             </div>
@@ -537,7 +620,7 @@
             <div class="proj-label">[02] OPERATIONS — ACTIVE DEPLOYMENTS</div>
 
             <div class="bento">
-                <!-- 1. OpenClaw Terminal (large, spans 2 rows) -->
+                <!-- 1. OpenClaw Terminal -->
                 <div class="window bento-openclaw sr">
                     <div class="window-bar">
                         <span>OpenClaw RL — Agent Eval Terminal</span>
@@ -638,73 +721,61 @@
             </div>
         </section>
 
-        <!-- ════════ CAPABILITIES: SYSTEM DIAGNOSTICS ════════ -->
+        <!-- ════════ CAPABILITIES — FREE FLOATING ════════ -->
         <section id="capabilities">
-            <div class="window sr" style="max-width: 1100px;">
-                <div class="window-bar">
-                    <span>System Diagnostics — Operator Profile</span>
-                    <div class="window-dots"><span></span><span></span></div>
+            <div class="cap-label sr">[03] SYSTEMS — OPERATOR DIAGNOSTICS</div>
+            <div class="diag-grid sr">
+                <div class="diag-section">
+                    <div class="diag-title">EVALUATION PROTOCOLS</div>
+                    <div class="diag-row">RLHF Feedback <span>// CORE</span></div>
+                    <div class="diag-row">Rubric Generation <span>// CORE</span></div>
+                    <div class="diag-row">Code QA Pipeline <span>// CORE</span></div>
+                    <div class="diag-row">Golden Responses <span>// CORE</span></div>
+                    <div class="diag-row">Bias Detection <span>// ACTIVE</span></div>
                 </div>
-                <div class="window-body" style="padding: 0;">
-                    <div class="diag-grid">
-                        <div class="diag-section">
-                            <div class="diag-title">EVALUATION PROTOCOLS</div>
-                            <div class="diag-row">RLHF Feedback <span>// CORE</span></div>
-                            <div class="diag-row">Rubric Generation <span>// CORE</span></div>
-                            <div class="diag-row">Code QA Pipeline <span>// CORE</span></div>
-                            <div class="diag-row">Golden Responses <span>// CORE</span></div>
-                            <div class="diag-row">Bias Detection <span>// ACTIVE</span></div>
-                        </div>
-                        <div class="diag-section">
-                            <div class="diag-title">SAFETY ALIGNMENT</div>
-                            <div class="diag-row">System Red-Teaming <span>// CORE</span></div>
-                            <div class="diag-row">Jailbreak Sequencing <span>// ACTIVE</span></div>
-                            <div class="diag-row">Prompt Injection <span>// CORE</span></div>
-                            <div class="diag-row">Threat Modeling <span>// ACTIVE</span></div>
-                            <div class="diag-row">Vulnerability Taxonomy <span>// ACTIVE</span></div>
-                        </div>
-                        <div class="diag-section">
-                            <div class="diag-title">LANGUAGES</div>
-                            <div class="diag-row">English <span>// NATIVE</span></div>
-                            <div class="diag-row">Spanish <span>// NATIVE</span></div>
-                            <div class="diag-row">French <span>// LIMITED</span></div>
-                            <div class="diag-row">Mandarin <span>// BASIC</span></div>
-                        </div>
-                        <div class="diag-section">
-                            <div class="diag-title">TOOLING</div>
-                            <div class="diag-row">OpenClaw <span>// INTERNAL</span></div>
-                            <div class="diag-row">Claude API <span>// NATIVE</span></div>
-                            <div class="diag-row">Firecrawl <span>// CORE</span></div>
-                            <div class="diag-row">Google Maps API <span>// CORE</span></div>
-                            <div class="diag-row">n8n Automation <span>// ACTIVE</span></div>
-                        </div>
-                        <div class="diag-section diag-full">
-                            <div class="diag-title">EDUCATION</div>
-                            <div class="diag-row">UADY — B.Eng Mechatronics, Robotics & Automation <span>2022 — 2027</span></div>
-                            <div class="diag-row">Platzi — Diploma in Frontend Development <span>2021</span></div>
-                        </div>
-                    </div>
+                <div class="diag-section">
+                    <div class="diag-title">SAFETY ALIGNMENT</div>
+                    <div class="diag-row">System Red-Teaming <span>// CORE</span></div>
+                    <div class="diag-row">Jailbreak Sequencing <span>// ACTIVE</span></div>
+                    <div class="diag-row">Prompt Injection <span>// CORE</span></div>
+                    <div class="diag-row">Threat Modeling <span>// ACTIVE</span></div>
+                    <div class="diag-row">Vulnerability Taxonomy <span>// ACTIVE</span></div>
+                </div>
+                <div class="diag-section">
+                    <div class="diag-title">LANGUAGES</div>
+                    <div class="diag-row">English <span>// NATIVE</span></div>
+                    <div class="diag-row">Spanish <span>// NATIVE</span></div>
+                    <div class="diag-row">French <span>// LIMITED</span></div>
+                    <div class="diag-row">Mandarin <span>// BASIC</span></div>
+                </div>
+                <div class="diag-section">
+                    <div class="diag-title">TOOLING</div>
+                    <div class="diag-row">OpenClaw <span>// INTERNAL</span></div>
+                    <div class="diag-row">Claude API <span>// NATIVE</span></div>
+                    <div class="diag-row">Firecrawl <span>// CORE</span></div>
+                    <div class="diag-row">Google Maps API <span>// CORE</span></div>
+                    <div class="diag-row">n8n Automation <span>// ACTIVE</span></div>
+                </div>
+                <div class="diag-section diag-full">
+                    <div class="diag-title">EDUCATION</div>
+                    <div class="diag-row">UADY — B.Eng Mechatronics, Robotics & Automation <span>2022 — 2027</span></div>
+                    <div class="diag-row">Platzi — Diploma in Frontend Development <span>2021</span></div>
                 </div>
             </div>
         </section>
 
-        <!-- ════════ CONTACT TERMINAL ════════ -->
+        <!-- ════════ CONTACT — FREE FLOATING ════════ -->
         <section id="contact">
-            <div class="contact-window window">
-                <div class="window-bar">
-                    <span>Transmission — Establish Connection</span>
-                    <div class="window-dots"><span></span><span></span></div>
-                </div>
-                <div class="window-body">
-                    <div class="contact-line"><span class="key">EMAIL</span>———— <a href="mailto:bluebirdluis@hotmail.com">bluebirdluis@hotmail.com</a></div>
-                    <div class="contact-line"><span class="key">PHONE</span>———— <a href="tel:+529994575063">+52 999 457 5063</a></div>
-                    <div class="contact-line"><span class="key">LINKEDIN</span>—— <a href="https://linkedin.com/in/juan-luis-medina-lozano-8a97b0223" target="_blank">juan-luis-medina-lozano</a></div>
-                    <div class="contact-line"><span class="key">GITHUB</span>———— <a href="https://github.com/KoiGi01" target="_blank">KoiGi01</a></div>
-                    <div style="margin-top: 2rem; font-size: 0.6rem; color: var(--g2); letter-spacing: 0.15em; line-height: 2.2;">
-                        [LOCATION: 20.97°N, 89.62°W — MÉRIDA, YUCATÁN]<br>
-                        [STATUS: ACCEPTING REMOTE CONTRACTS]<br>
-                        <span style="margin-top: 0.5rem; display: inline-block;">>&nbsp;<span class="cursor-blink"></span></span>
-                    </div>
+            <div class="contact-heading sr">[04] TRANSMISSION — ESTABLISH CONNECTION</div>
+            <div class="contact-grid sr">
+                <div class="contact-line"><span class="key">EMAIL</span>———— <a href="mailto:bluebirdluis@hotmail.com">bluebirdluis@hotmail.com</a></div>
+                <div class="contact-line"><span class="key">PHONE</span>———— <a href="tel:+529994575063">+52 999 457 5063</a></div>
+                <div class="contact-line"><span class="key">LINKEDIN</span>—— <a href="https://linkedin.com/in/juan-luis-medina-lozano-8a97b0223" target="_blank">juan-luis-medina-lozano</a></div>
+                <div class="contact-line"><span class="key">GITHUB</span>———— <a href="https://github.com/KoiGi01" target="_blank">KoiGi01</a></div>
+                <div class="contact-meta">
+                    [LOCATION: 20.97°N, 89.62°W — MÉRIDA, YUCATÁN]<br>
+                    [STATUS: ACCEPTING REMOTE CONTRACTS]<br>
+                    <span style="margin-top: 0.5rem; display: inline-block;">>&nbsp;<span class="cursor-blink"></span></span>
                 </div>
             </div>
         </section>
@@ -712,11 +783,22 @@
 
     <footer>© 2026 JUAN LUIS MEDINA LOZANO &nbsp;/&nbsp; ALL SYSTEMS OPERATIONAL</footer>
 
-    <!-- ╔══════════════════════════════════════╗
-         ║          ENGINE                      ║
-         ╚══════════════════════════════════════╝ -->
     <script>
     gsap.registerPlugin(ScrollTrigger);
+
+    /* ═══════════════════════════════════════════════════════════
+       0. CURSOR & MOUSE TRACKING
+       ═══════════════════════════════════════════════════════════ */
+    const cursorEl = document.getElementById('cursor');
+    let smMouseX = 0, smMouseY = 0;
+    document.addEventListener('mousemove', e => {
+        cursorEl.style.left = e.clientX + 'px';
+        cursorEl.style.top = e.clientY + 'px';
+        smMouseX = (e.clientX / window.innerWidth - 0.5) * 2;
+        smMouseY = -(e.clientY / window.innerHeight - 0.5) * 2;
+        document.getElementById('hud-mouse').textContent =
+            `X:${String(e.clientX).padStart(4,'0')} Y:${String(e.clientY).padStart(4,'0')}`;
+    });
 
     /* ═══════════════════════════════════════════════════════════
        1. THREE.JS — PARTICLE MORPH ENGINE
@@ -762,17 +844,17 @@
     }
     function genCube(n, s) {
         const a = new Float32Array(n * 3);
-        const h = s / 2;
+        const hs = s / 2;
         for (let i = 0; i < n; i++) {
-            const f = Math.floor(Math.random() * 6);
+            const face = Math.floor(Math.random() * 6);
             let x, y, z;
-            switch(f) {
-                case 0: x =  h; y = (Math.random()-0.5)*s; z = (Math.random()-0.5)*s; break;
-                case 1: x = -h; y = (Math.random()-0.5)*s; z = (Math.random()-0.5)*s; break;
-                case 2: y =  h; x = (Math.random()-0.5)*s; z = (Math.random()-0.5)*s; break;
-                case 3: y = -h; x = (Math.random()-0.5)*s; z = (Math.random()-0.5)*s; break;
-                case 4: z =  h; x = (Math.random()-0.5)*s; y = (Math.random()-0.5)*s; break;
-                case 5: z = -h; x = (Math.random()-0.5)*s; y = (Math.random()-0.5)*s; break;
+            switch(face) {
+                case 0: x = hs;  y = (Math.random()-0.5)*s; z = (Math.random()-0.5)*s; break;
+                case 1: x = -hs; y = (Math.random()-0.5)*s; z = (Math.random()-0.5)*s; break;
+                case 2: y = hs;  x = (Math.random()-0.5)*s; z = (Math.random()-0.5)*s; break;
+                case 3: y = -hs; x = (Math.random()-0.5)*s; z = (Math.random()-0.5)*s; break;
+                case 4: z = hs;  x = (Math.random()-0.5)*s; y = (Math.random()-0.5)*s; break;
+                case 5: z = -hs; x = (Math.random()-0.5)*s; y = (Math.random()-0.5)*s; break;
             }
             a[i*3] = x; a[i*3+1] = y; a[i*3+2] = z;
         }
@@ -784,28 +866,29 @@
             const u = Math.random() * Math.PI * 2;
             const v = Math.random() * Math.PI * 2;
             a[i*3]   = (R + r * Math.cos(v)) * Math.cos(u);
-            a[i*3+1] = r * Math.sin(v);
-            a[i*3+2] = (R + r * Math.cos(v)) * Math.sin(u);
+            a[i*3+1] = (R + r * Math.cos(v)) * Math.sin(u);
+            a[i*3+2] = r * Math.sin(v);
         }
         return a;
     }
-    function genGrid(n, w, d) {
+    function genGrid(n, w, h) {
         const a = new Float32Array(n * 3);
         for (let i = 0; i < n; i++) {
-            const x = (Math.random() - 0.5) * w;
-            const z = (Math.random() - 0.5) * d;
-            a[i*3]   = x;
-            a[i*3+1] = Math.sin(x * 0.5) * Math.cos(z * 0.5) * 0.5;
-            a[i*3+2] = z;
+            a[i*3]   = (Math.random() - 0.5) * w;
+            a[i*3+1] = (Math.random() - 0.5) * 2;
+            a[i*3+2] = (Math.random() - 0.5) * h;
+            // Add terrain noise
+            const dx = a[i*3], dz = a[i*3+2];
+            a[i*3+1] += Math.sin(dx * 0.5) * Math.cos(dz * 0.5) * 2;
         }
         return a;
     }
-    function genScattered(n, spread) {
+    function genScattered(n, range) {
         const a = new Float32Array(n * 3);
         for (let i = 0; i < n; i++) {
-            a[i*3]   = (Math.random() - 0.5) * spread;
-            a[i*3+1] = (Math.random() - 0.5) * spread;
-            a[i*3+2] = (Math.random() - 0.5) * spread;
+            a[i*3]   = (Math.random() - 0.5) * range;
+            a[i*3+1] = (Math.random() - 0.5) * range;
+            a[i*3+2] = (Math.random() - 0.5) * range;
         }
         return a;
     }
@@ -813,10 +896,10 @@
     // ── Create Targets ──
     const targets = [
         genSphere(COUNT, 7),         // 0: Hero
-        genIcosahedron(COUNT, 7),    // 1: Mercor (angular)
-        genCube(COUNT, 10),          // 2: Outlier Code (structured)
-        genTorus(COUNT, 5.5, 2),     // 3: Outlier LATAM (ring)
-        genGrid(COUNT, 20, 15)       // 4: Country Credit (terrain)
+        genIcosahedron(COUNT, 7),    // 1: CCC (angular)
+        genCube(COUNT, 10),          // 2: Outlier LATAM (structured)
+        genTorus(COUNT, 5.5, 2),     // 3: Outlier Code (ring)
+        genGrid(COUNT, 20, 15)       // 4: Mercor (terrain)
     ];
     const scattered = genScattered(COUNT, 60);
 
@@ -838,7 +921,6 @@
 
     // ── Create Particle System ──
     const positions = new Float32Array(COUNT * 3);
-    // Start from scattered positions
     for (let i = 0; i < COUNT * 3; i++) positions[i] = scattered[i];
 
     const geometry = new THREE.BufferGeometry();
@@ -861,45 +943,30 @@
     scene.add(pGroup);
 
     // ── State ──
-    let activeTarget = 0;
+    let activeTarget = -1; // -1 = scattered
     let booted = false;
-    let mouseNX = 0, mouseNY = 0;
-    let smMouseX = 0, smMouseY = 0;
-    let currentSection = 'hero';
+    let currentSection = 'boot';
     let targetGroupX = 0;
     let targetOpacity = 0.7;
     let targetScale = 1;
 
-    window.addEventListener('mousemove', e => {
-        mouseNX = (e.clientX / window.innerWidth) * 2 - 1;
-        mouseNY = -(e.clientY / window.innerHeight) * 2 + 1;
-        // Update cursor
-        const cur = document.getElementById('cursor');
-        cur.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
-        // Update HUD mouse coords
-        document.getElementById('hud-mouse').textContent =
-            `X:${String(e.clientX).padStart(4,'0')}  Y:${String(e.clientY).padStart(4,'0')}`;
-    });
-
     // ── Animation Loop ──
     function animate() {
         requestAnimationFrame(animate);
-        if (!booted) return;
+        if (!booted) { renderer.render(scene, camera); return; }
 
-        const t = performance.now() * 0.0001;
-        const target = targets[activeTarget];
-
-        // Smooth mouse
-        smMouseX += (mouseNX - smMouseX) * 0.04;
-        smMouseY += (mouseNY - smMouseY) * 0.04;
-
-        // Lerp positions toward target
+        const t = performance.now() * 0.001;
         const posArr = geometry.attributes.position.array;
+        const targetArr = activeTarget >= 0 ? targets[activeTarget] : scattered;
+
+        // Morph each particle toward target
         for (let i = 0; i < COUNT * 3; i++) {
-            posArr[i] += (target[i] - posArr[i]) * 0.035;
+            posArr[i] += (targetArr[i] - posArr[i]) * 0.03;
+            // Subtle drift
+            posArr[i] += Math.sin(t + i * 0.01) * 0.003;
         }
 
-        // Mouse repulsion (project mouse into 3D approx)
+        // Mouse repulsion
         const mx = smMouseX * 8;
         const my = smMouseY * 6;
         for (let i = 0; i < COUNT; i++) {
@@ -943,16 +1010,13 @@
             setTimeout(() => line.classList.add('vis'), delay + i * 200);
         });
 
-        // After boot text, start particle assembly
         setTimeout(() => {
-            booted = true; // Start animation loop rendering
-            activeTarget = 0; // Morph from scattered → sphere
+            booted = true;
+            activeTarget = 0;
         }, delay + lines.length * 200 + 300);
 
-        // Fade boot overlay
         setTimeout(() => {
             overlay.classList.add('fade');
-            // Reveal hero elements
             gsap.to('#hero-label', { opacity: 1, duration: 1, delay: 0.2 });
             gsap.to('#hero-name', { opacity: 1, duration: 1, delay: 0.4 });
             gsap.to('#hero-role', { opacity: 1, duration: 1, delay: 0.6 });
@@ -961,16 +1025,38 @@
             gsap.to('#main-nav', { opacity: 1, duration: 1, delay: 1 });
         }, delay + lines.length * 200 + 800);
 
-        // Remove overlay from DOM
         setTimeout(() => overlay.remove(), delay + lines.length * 200 + 2000);
     })();
 
     /* ═══════════════════════════════════════════════════════════
-       3. GSAP — EXPERIENCE SCROLLYTELLING
+       3. INTERACTIVE TIMELINE — EXPERIENCE
        ═══════════════════════════════════════════════════════════ */
-    const expPanels = gsap.utils.toArray('.exp-panel');
-    const expLabels = ['01 / 04 — MERCOR', '02 / 04 — OUTLIER AI', '03 / 04 — OUTLIER AI (LATAM)', '04 / 04 — COUNTRY CREDIT CLUB'];
-    const morphMap = [1, 2, 3, 4]; // target indices for each panel
+    const TIMELINE_START = 2024.17; // Feb 2024
+    const TIMELINE_END = 2026.42;   // ~May 2026 (present + buffer)
+    const TIMELINE_RANGE = TIMELINE_END - TIMELINE_START;
+
+    const jobEntries = document.querySelectorAll('.job-entry');
+    const playhead = document.getElementById('tl-playhead');
+    const dateLabel = document.getElementById('tl-date');
+
+    // Month name helper
+    const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+    function numToDateStr(num) {
+        const year = Math.floor(num);
+        const monthIdx = Math.min(11, Math.floor((num - year) * 12));
+        return `${MONTHS[monthIdx]} ${year}`;
+    }
+
+    // Map each job to a particle morph target
+    const jobMorphMap = {
+        'job-ccc': 1,      // icosahedron
+        'job-latam': 2,    // cube
+        'job-outlier': 3,  // torus
+        'job-mercor': 4    // grid/terrain
+    };
+
+    // Track which jobs are active for particle decisions
+    let lastActiveJobId = null;
 
     // Pin the sticky container
     ScrollTrigger.create({
@@ -980,11 +1066,55 @@
         pin: '#exp-sticky',
         onUpdate: self => {
             const p = self.progress;
-            const idx = Math.min(Math.floor(p * expPanels.length), expPanels.length - 1);
-            activeTarget = morphMap[idx];
-            document.getElementById('exp-counter').textContent = expLabels[idx];
+            const currentTime = TIMELINE_START + p * TIMELINE_RANGE;
+
+            // Update playhead position
+            const pct = Math.min(100, Math.max(0, p * 100));
+            playhead.style.left = pct + '%';
+            dateLabel.style.left = pct + '%';
+            dateLabel.textContent = numToDateStr(currentTime);
+
+            // Show/hide jobs based on current time
+            let activeJobs = [];
+            let newestActiveJob = null;
+            let newestStart = 0;
+
+            jobEntries.forEach(entry => {
+                const start = parseFloat(entry.dataset.start);
+                const end = parseFloat(entry.dataset.end);
+                const isPresent = end > 9000;
+
+                if (currentTime >= start) {
+                    if (currentTime <= end || isPresent) {
+                        // Job is active
+                        entry.classList.add('active');
+                        entry.classList.remove('ended');
+                        activeJobs.push(entry);
+                        if (start > newestStart) {
+                            newestStart = start;
+                            newestActiveJob = entry;
+                        }
+                    } else {
+                        // Job has ended
+                        entry.classList.remove('active');
+                        entry.classList.add('ended');
+                    }
+                } else {
+                    // Not started yet
+                    entry.classList.remove('active');
+                    entry.classList.remove('ended');
+                }
+            });
+
+            // Morph particles to the newest active job's shape
+            if (newestActiveJob && newestActiveJob.id !== lastActiveJobId) {
+                lastActiveJobId = newestActiveJob.id;
+                activeTarget = jobMorphMap[newestActiveJob.id] || 0;
+            }
+
+            // Move particles to the right when in experience
             currentSection = 'experience';
-            targetGroupX = 5.5;
+            targetGroupX = 6;
             targetOpacity = 0.5;
             targetScale = 1;
             document.getElementById('hud-section').textContent = '[DOSSIER]';
@@ -1003,30 +1133,10 @@
             targetOpacity = 0.7;
             targetScale = 1;
             currentSection = 'hero';
+            lastActiveJobId = null;
+            // Reset all jobs
+            jobEntries.forEach(e => { e.classList.remove('active','ended'); });
             document.getElementById('hud-section').textContent = '[BOOT]';
-        }
-    });
-
-    // Timeline for panel transitions
-    const tlExp = gsap.timeline({
-        scrollTrigger: {
-            trigger: '#experience',
-            start: 'top top',
-            end: 'bottom bottom',
-            scrub: 1
-        }
-    });
-
-    expPanels.forEach((panel, i) => {
-        tlExp.fromTo(panel,
-            { autoAlpha: 0, x: -60, scale: 0.97 },
-            { autoAlpha: 1, x: 0, scale: 1, duration: 1, ease: 'power2.out' }
-        );
-        if (i < expPanels.length - 1) {
-            tlExp.to(panel,
-                { autoAlpha: 0, x: -60, scale: 1.03, duration: 0.6, ease: 'power2.in' },
-                '+=0.5'
-            );
         }
     });
 
@@ -1045,7 +1155,6 @@
         });
     });
 
-    // Animate status bars when visible
     ScrollTrigger.create({
         trigger: '#projects',
         start: 'top 60%',
@@ -1057,6 +1166,14 @@
 
     // Capabilities reveal
     gsap.utils.toArray('#capabilities .sr').forEach(el => {
+        gsap.to(el, {
+            opacity: 1, y: 0, duration: 1,
+            scrollTrigger: { trigger: el, start: 'top 85%' }
+        });
+    });
+
+    // Contact reveal
+    gsap.utils.toArray('#contact .sr').forEach(el => {
         gsap.to(el, {
             opacity: 1, y: 0, duration: 1,
             scrollTrigger: { trigger: el, start: 'top 85%' }
@@ -1089,7 +1206,7 @@
     });
 
     /* ═══════════════════════════════════════════════════════════
-       5. BENTO WIREFRAME WIDGET (separate Three.js scene)
+       5. BENTO WIREFRAME WIDGET
        ═══════════════════════════════════════════════════════════ */
     (function initWireframe() {
         const cont = document.getElementById('wireframe-container');
@@ -1129,7 +1246,6 @@
             [d.getHours(), d.getMinutes(), d.getSeconds()].map(v => String(v).padStart(2,'0')).join(':');
     }, 1000);
 
-    // Live random coordinate jitter in status panel
     setInterval(() => {
         const el = document.getElementById('live-coords');
         if (el) {
@@ -1137,13 +1253,11 @@
         }
     }, 800);
 
-    // Scroll progress bar
     window.addEventListener('scroll', () => {
         const p = (window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100;
         document.getElementById('scroll-thumb').style.height = p + '%';
     });
 
-    // Resize handler
     window.addEventListener('resize', () => {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
