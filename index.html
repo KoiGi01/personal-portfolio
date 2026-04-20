@@ -3,1111 +3,1153 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Juan Luis Medina Lozano — AI Evaluation Specialist. Adversarial testing, RLHF feedback, and code assessment for frontier AI systems.">
-    <title>Juan Luis Medina Lozano — AI Evaluation Specialist</title>
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=Inter:wght@200;300;400;500;600;700&display=swap" rel="stylesheet">
+    <meta name="description" content="Juan Luis Medina Lozano — AI Evaluation Specialist. Adversarial testing, RLHF, and code assessment for frontier AI.">
+    <title>JL.MEDINA // DATASCAPE</title>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+
     <style>
+        /* ═══════════════════════════════════════
+           RESET & VARIABLES
+           ═══════════════════════════════════════ */
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
-            --red: #D41920;
-            --red-glow: rgba(212, 25, 32, 0.25);
+            --void: #000000;
+            --white: #FFFFFF;
+            --g1: rgba(255,255,255,0.7);
+            --g2: rgba(255,255,255,0.35);
+            --g3: rgba(255,255,255,0.12);
+            --g4: rgba(255,255,255,0.05);
             --mono: 'IBM Plex Mono', monospace;
-            --sans: 'Inter', sans-serif;
-            --card-bg: rgba(255,255,255,0.015);
-            --card-hover: rgba(255,255,255,0.04);
-            --border: rgba(255,255,255,0.1);
         }
-        html { scroll-behavior: smooth; }
+        html { scroll-behavior: auto; }
         body {
-            font-family: var(--sans);
-            background: #000000;
-            color: #ffffff;
-            -webkit-font-smoothing: antialiased;
+            background: var(--void);
+            color: var(--white);
+            font-family: var(--mono);
             overflow-x: hidden;
+            cursor: none;
+            -webkit-font-smoothing: antialiased;
         }
-        ::selection { background: var(--red); color: #fff; }
+        ::selection { background: #fff; color: #000; }
 
-        /* ══════════════════════════════════════
-           FULL-PAGE DOT GRID TEXTURE
-           ══════════════════════════════════════ */
-        body::before {
+        /* Scanlines */
+        body::after {
             content: '';
             position: fixed; inset: 0;
-            background-image: radial-gradient(rgba(255,255,255,0.08) 1px, transparent 1px);
-            background-size: 16px 16px;
-            pointer-events: none;
-            z-index: 0;
+            background: repeating-linear-gradient(0deg, transparent 0px, transparent 2px, rgba(255,255,255,0.012) 2px, rgba(255,255,255,0.012) 4px);
+            pointer-events: none; z-index: 9998;
         }
 
-        /* ══════════════════════════════════════
-           GLOW UTILITIES
-           ══════════════════════════════════════ */
-        .glass-panel {
-            background: rgba(0,0,0,0.8);
-            border: 1px solid var(--border);
-            backdrop-filter: blur(10px);
+        /* ═══════════════════════════════════════
+           CUSTOM CROSSHAIR CURSOR
+           ═══════════════════════════════════════ */
+        #cursor {
+            position: fixed; z-index: 99999; pointer-events: none;
+            mix-blend-mode: difference;
+        }
+        #cursor .ch { position: absolute; background: #fff; }
+        #cursor .ch-h { width: 28px; height: 1px; top: 0; left: -14px; }
+        #cursor .ch-v { width: 1px; height: 28px; top: -14px; left: 0; }
+        #cursor .ch-dot { width: 3px; height: 3px; border-radius: 50%; background: #fff; top: -1px; left: -1px; position: absolute; }
+
+        /* ═══════════════════════════════════════
+           HUD OVERLAY
+           ═══════════════════════════════════════ */
+        #hud-frame {
+            position: fixed; inset: 20px;
+            pointer-events: none; z-index: 50;
+        }
+        .hud-corner { position: absolute; width: 40px; height: 40px; }
+        .hud-corner.tl { top: 0; left: 0; border-top: 1px solid var(--g3); border-left: 1px solid var(--g3); }
+        .hud-corner.tr { top: 0; right: 0; border-top: 1px solid var(--g3); border-right: 1px solid var(--g3); }
+        .hud-corner.bl { bottom: 0; left: 0; border-bottom: 1px solid var(--g3); border-left: 1px solid var(--g3); }
+        .hud-corner.br { bottom: 0; right: 0; border-bottom: 1px solid var(--g3); border-right: 1px solid var(--g3); }
+
+        .hud-label {
+            position: fixed; font-size: 0.6rem; letter-spacing: 0.2em;
+            color: var(--g2); pointer-events: none; z-index: 51;
+        }
+        .hud-tl { top: 28px; left: 28px; }
+        .hud-tr { top: 28px; right: 28px; text-align: right; }
+        .hud-bl { bottom: 28px; left: 28px; }
+        .hud-br { bottom: 28px; right: 28px; text-align: right; }
+
+        #scroll-track {
+            position: fixed; right: 24px; top: 50%; transform: translateY(-50%);
+            width: 1px; height: 80px; background: var(--g3);
+            z-index: 51; pointer-events: none;
+        }
+        #scroll-thumb {
+            width: 1px; height: 0%; background: var(--white);
+            transition: height 0.15s;
         }
 
-        /* ══════════════════════════════════════
-           NAV
-           ══════════════════════════════════════ */
+        /* ═══════════════════════════════════════
+           BOOT OVERLAY
+           ═══════════════════════════════════════ */
+        #boot-overlay {
+            position: fixed; inset: 0; z-index: 10000;
+            background: var(--void);
+            display: flex; align-items: center; justify-content: center;
+            transition: opacity 0.8s ease;
+        }
+        #boot-overlay.fade { opacity: 0; pointer-events: none; }
+        .scan-line {
+            position: fixed; top: 0; left: 0; width: 100%; height: 2px;
+            background: linear-gradient(90deg, transparent 10%, rgba(255,255,255,0.6) 50%, transparent 90%);
+            box-shadow: 0 0 30px rgba(255,255,255,0.3);
+            animation: scanSweep 1s ease-out forwards;
+            z-index: 10001;
+        }
+        @keyframes scanSweep { from { transform: translateY(-10vh); } to { transform: translateY(110vh); } }
+        #boot-text {
+            font-size: 0.75rem; color: var(--g2); line-height: 2.2;
+            width: 480px; max-width: 90vw;
+        }
+        #boot-text span { display: block; opacity: 0; }
+        #boot-text span.vis { opacity: 1; }
+        #boot-text .highlight { color: var(--white); }
+
+        /* ═══════════════════════════════════════
+           THREE.JS CONTAINER
+           ═══════════════════════════════════════ */
+        #gl-canvas {
+            position: fixed; inset: 0;
+            width: 100vw; height: 100vh;
+            z-index: 0; pointer-events: none;
+        }
+
+        /* ═══════════════════════════════════════
+           CONTENT LAYER
+           ═══════════════════════════════════════ */
+        main { position: relative; z-index: 10; }
+
+        /* ═══════════════════════════════════════
+           NAVIGATION
+           ═══════════════════════════════════════ */
         nav {
-            position: fixed; top: 0; width: 100%; z-index: 999;
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 0 4rem;
-            height: 70px;
-            background: rgba(0,0,0,0.85);
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(255,255,255,0.08);
-            box-shadow: 0 4px 30px rgba(0,0,0,0.5);
+            position: fixed; top: 0; width: 100%; height: 70px; z-index: 100;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0 4vw;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.9) 60%, transparent);
+            opacity: 0;
         }
-        .nav-brand {
-            font-family: var(--mono); font-weight: 700;
-            font-size: 0.85rem; letter-spacing: 0.25em;
-            display: flex; align-items: center; gap: 0.85rem;
-            color: #fff;
-        }
-        .nav-brand .red-dot {
-            width: 8px; height: 8px;
-            background: var(--red);
-            border-radius: 50%;
-            box-shadow: 0 0 12px var(--red), 0 0 24px var(--red-glow);
-            animation: redPulse 2.5s infinite alternate;
-        }
-        @keyframes redPulse {
-            0% { box-shadow: 0 0 4px var(--red), 0 0 10px var(--red-glow); opacity: 0.8;}
-            100% { box-shadow: 0 0 8px var(--red), 0 0 18px var(--red-glow); opacity: 1;}
-        }
-        .nav-links {
-            display: flex; gap: 3rem;
-            font-family: var(--mono); font-size: 0.7rem;
-            letter-spacing: 0.15em; font-weight: 600;
-        }
+        .logo { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.3em; color: var(--g1); }
+        .nav-links { display: flex; gap: 2.5rem; }
         .nav-links a {
-            color: rgba(255,255,255,0.5);
-            text-decoration: none;
-            transition: color 0.3s;
-            position: relative;
+            font-size: 0.65rem; letter-spacing: 0.15em; color: var(--g2);
+            text-decoration: none; transition: color 0.3s;
         }
-        .nav-links a:hover { color: #fff; }
-        .nav-links a::after {
-            content: ''; position: absolute;
-            bottom: -6px; left: 0; width: 0; height: 2px;
-            background: var(--red);
-            transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        .nav-links a:hover::after { width: 100%; }
-        .nav-status {
-            font-family: var(--mono); display: flex; align-items: center; justify-content: flex-end;
-            min-width: 120px;
-        }
-        .mobile-toggle {
-            display: none; background: none; border: none; cursor: pointer;
-            flex-direction: column; gap: 5px; padding: 4px;
-        }
-        .mobile-toggle span { display: block; width: 22px; height: 2px; background: #fff; }
+        .nav-links a:hover { color: var(--white); }
 
-        /* ══════════════════════════════════════
+        /* ═══════════════════════════════════════
            HERO
-           ══════════════════════════════════════ */
-        .hero {
-            min-height: max(100vh, 850px);
+           ═══════════════════════════════════════ */
+        #hero {
+            min-height: 100vh;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: flex-start;
+            padding: 0 8vw;
+            position: relative;
+        }
+        .hero-label { font-size: 0.65rem; letter-spacing: 0.3em; color: var(--g2); margin-bottom: 2.5rem; }
+        .hero-name {
+            font-size: clamp(3rem, 7vw, 6.5rem); font-weight: 300;
+            letter-spacing: -0.03em; line-height: 1.05; margin-bottom: 0.5rem;
+        }
+        .hero-name strong { font-weight: 700; }
+        .hero-role {
+            font-size: 0.8rem; letter-spacing: 0.25em; color: var(--g2);
+            margin-top: 2rem; margin-bottom: 3.5rem;
+        }
+        .hero-desc { font-size: 0.85rem; line-height: 2; color: var(--g1); max-width: 550px; font-weight: 300; }
+        .hero-scroll {
+            position: absolute; bottom: 3.5rem; left: 8vw;
+            font-size: 0.6rem; letter-spacing: 0.3em; color: var(--g2);
+            display: flex; align-items: center; gap: 1rem;
+        }
+        .scroll-line { width: 40px; height: 1px; background: var(--g2); animation: scrollPulse 2s infinite; }
+        @keyframes scrollPulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+
+        /* ═══════════════════════════════════════
+           WINDOW PANEL COMPONENT
+           ═══════════════════════════════════════ */
+        .window {
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--g3);
+        }
+        .window-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--g3);
+            font-size: 0.6rem; letter-spacing: 0.15em; color: var(--g2);
+        }
+        .window-dots { display: flex; gap: 5px; }
+        .window-dots span {
+            width: 6px; height: 6px; border-radius: 50%;
+            border: 1px solid var(--g2);
+        }
+        .window-body { padding: 24px; }
+
+        /* ═══════════════════════════════════════
+           EXPERIENCE SCROLLYTELLING
+           ═══════════════════════════════════════ */
+        #experience { position: relative; }
+        .exp-sticky {
+            height: 100vh; width: 100%;
             display: flex; align-items: center;
-            position: relative;
-            overflow: hidden;
-            padding-top: 5rem;
+            padding: 0 4vw; position: relative;
         }
-        #hero-dots {
-            position: absolute; inset: 0;
-            width: 100%; height: 100%;
-            z-index: 1; /* Abstract animation layer */
+        .exp-counter {
+            position: absolute; top: 3.5rem; left: 4vw;
+            font-size: 0.6rem; letter-spacing: 0.2em; color: var(--g2);
         }
-        #hero-gl {
-            position: absolute; top: 0; right: -5%;
-            width: 60%; height: 100%;
-            z-index: 0; opacity: 0.25;
+        .exp-panel {
+            position: absolute; left: 4vw; top: 50%; transform: translateY(-50%);
+            width: 520px; max-width: 45vw;
+            opacity: 0; visibility: hidden;
         }
-        .hero::after {
-            content: ''; position: absolute;
-            bottom: 0; left: 0; right: 0; height: 350px;
-            background: linear-gradient(to top, rgba(0,0,0,1) 10%, transparent);
-            z-index: 2; pointer-events: none;
+        .exp-panel .window-body h3 {
+            font-size: 1.8rem; font-weight: 700; margin-bottom: 0.25rem; line-height: 1.2;
         }
-        .hero-content {
-            position: relative; z-index: 10;
-            padding: 0 4rem;
-            max-width: 1000px;
-            margin-top: -3rem; /* Tweak centering visually */
+        .exp-panel .window-body .role {
+            font-size: 0.75rem; letter-spacing: 0.15em; color: var(--g2); margin-bottom: 2rem;
         }
-        .hero-tag {
-            font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.3em;
-            color: var(--red); margin-bottom: 3rem; display: flex; align-items: center; gap: 1.5rem; font-weight: 600;
+        .exp-panel .window-body .date {
+            font-size: 0.65rem; color: var(--g2); margin-bottom: 1.5rem; letter-spacing: 0.15em;
         }
-        .hero-tag .line { width: 45px; height: 2px; background: var(--red); }
-        .hero-h1 {
-            font-size: clamp(3.2rem, 7.5vw, 7.5rem); font-weight: 700; line-height: 1.0;
-            letter-spacing: -0.04em; margin-bottom: 2rem; color: #fff;
+        .exp-panel .window-body ul { list-style: none; margin-bottom: 2rem; }
+        .exp-panel .window-body li {
+            position: relative; padding-left: 1.6rem; margin-bottom: 1.1rem;
+            font-size: 0.8rem; line-height: 1.7; color: var(--g1); font-weight: 300;
         }
-        .hero-h1 .outline-text {
-            -webkit-text-stroke: 1px rgba(255,255,255,0.4); color: transparent;
+        .exp-panel .window-body li::before {
+            content: '›'; position: absolute; left: 0; color: var(--white); font-weight: 700; font-size: 1.1rem;
         }
-        .hero-sub {
-            font-family: var(--mono); font-size: 1.05rem; letter-spacing: 0.15em;
-            color: rgba(255,255,255,0.7); margin-bottom: 2.5rem; font-weight: 500;
-        }
-        .hero-sub .dot { color: var(--red); }
-        .hero-desc {
-            font-size: 1.25rem; line-height: 1.8; color: rgba(255,255,255,0.6);
-            font-weight: 400; max-width: 680px; margin-bottom: 4rem;
-        }
-        .hero-btns { display: flex; gap: 1.5rem; flex-wrap: wrap; position: relative; z-index: 20;}
-        .btn-red {
-            display: inline-block;
-            font-family: var(--mono); font-size: 0.8rem; letter-spacing: 0.1em; font-weight: 600;
-            padding: 1.2rem 3rem; background: var(--red); color: #fff; border: 1px solid var(--red);
-            cursor: pointer; text-decoration: none; transition: all 0.35s; position: relative; overflow: hidden;
-        }
-        .btn-red::before {
-            content: ''; position: absolute; inset: 0;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-            transform: translateX(-100%); transition: transform 0.5s;
-        }
-        .btn-red:hover { box-shadow: 0 6px 20px rgba(212,25,32,0.3); transform: translateY(-3px); }
-        .btn-red:hover::before { transform: translateX(100%); }
-        .btn-outline {
-            display: inline-block;
-            font-family: var(--mono); font-size: 0.8rem; letter-spacing: 0.1em; font-weight: 600;
-            padding: 1.2rem 3rem; background: transparent; color: #fff;
-            border: 1px solid rgba(255,255,255,0.3); cursor: pointer; text-decoration: none; transition: all 0.35s;
-        }
-        .btn-outline:hover {
-            border-color: #fff; background: rgba(255,255,255,0.1); transform: translateY(-3px);
-        }
-        .hero-footer {
-            position: absolute; bottom: 3rem; left: 4rem; right: 4rem;
-            display: flex; justify-content: space-between;
-            font-family: var(--mono); font-size: 0.65rem;
-            color: rgba(255,255,255,0.5); letter-spacing: 0.2em; font-weight: 600;
-            z-index: 10; border-top: 1px solid rgba(255,255,255,0.15);
-            padding-top: 1.5rem;
-        }
-
-        /* ══════════════════════════════════════
-           SECTIONS (GENERAL)
-           ══════════════════════════════════════ */
-        .section {
-            position: relative; z-index: 5;
-            padding: clamp(6rem, 12vh, 10rem) 4rem;
-        }
-        .section-header {
-            display: flex; align-items: flex-end; gap: 2.5rem;
-            margin-bottom: 5rem;
-        }
-        .section-num {
-            font-family: var(--mono); font-size: 5.5rem; font-weight: 700; line-height: 0.8;
-            color: transparent; /* Makes the number hollow in dark mode */
-            -webkit-text-stroke: 3px var(--red);
-            text-shadow: 4px 4px 0 rgba(212, 25, 32, 0.2);
-        }
-        .section-label {
-            font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.4em;
-            color: rgba(255,255,255,0.5); padding-bottom: 0.5rem; font-weight: 700;
-        }
-        .section-rule {
-            flex: 1; height: 1px; background: linear-gradient(to right, rgba(255,255,255,0.15), transparent); margin-bottom: 0.8rem;
-        }
-        .section-alt {
-            background: linear-gradient(180deg, rgba(212,25,32,0.06) 0%, transparent 30%);
-        }
-
-        /* ══════════════════════════════════════
-           EXPERIENCE — TIMELINE REDESIGN
-           ══════════════════════════════════════ */
-        .exp-timeline {
-            position: relative;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 2rem 0;
-            display: flex;
-            flex-direction: column;
-            gap: 2rem;
-        }
-        /* Track container */
-        .exp-track {
-            position: absolute;
-            top: 0; bottom: 0; left: 50%;
-            width: 2px;
-            background: rgba(255,255,255,0.1);
-            transform: translateX(-50%);
-            z-index: 1;
-        }
-        /* Active filled line */
-        .exp-track-fill {
-            position: absolute;
-            top: 0; left: 0; width: 100%;
-            background: var(--red);
-            height: 0%;
-            box-shadow: 0 0 15px var(--red);
-            transition: height 0.1s ease-out;
-        }
-        /* Card Container */
-        .exp-row {
-            position: relative;
-            display: flex;
-            justify-content: flex-start;
-            width: 100%;
-            z-index: 2;
-        }
-        .exp-row.right {
-            justify-content: flex-end;
-        }
-        .exp-card-wrap {
-            width: calc(50% - 3.5rem);
-            position: relative;
-        }
-        .exp-card {
-            padding: 3rem; background: #000000;
-            border: 1px solid rgba(255,255,255,0.1);
-            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-            opacity: 0.4;
-            transform: translateY(20px);
-        }
-        /* Active State */
-        .exp-row.active .exp-card, .exp-card:hover {
-            opacity: 1;
-            transform: translateY(0);
-            border-color: rgba(255,255,255,0.25);
-            box-shadow: 0 15px 40px rgba(0,0,0,0.8);
-        }
-        .exp-timeline-dot {
-            position: absolute;
-            top: 4rem; 
-            width: 16px; height: 16px;
-            background: #000;
-            border: 3px solid rgba(255,255,255,0.2);
-            border-radius: 50%;
-            z-index: 3;
-            transition: all 0.4s;
-        }
-        .exp-row:not(.right) .exp-timeline-dot {
-            right: -3.5rem; /* distance to center line */
-            transform: translateX(50%);
-        }
-        .exp-row.right .exp-timeline-dot {
-            left: -3.5rem;
-            transform: translateX(-50%);
-        }
-        /* Dot active state */
-        .exp-row.active .exp-timeline-dot, .exp-row:hover .exp-timeline-dot {
-            border-color: var(--red);
-            background: #000;
-            box-shadow: 0 0 0 4px #000, inset 0 0 10px var(--red), 0 0 15px var(--red-glow);
-        }
-        .exp-row.active.filled-dot .exp-timeline-dot {
-            background: var(--red);
-        }
-        .exp-header {
-            margin-bottom: 2rem; padding-bottom: 2rem; border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-        .exp-date {
-            font-family: var(--mono); font-size: 0.8rem; color: var(--red);
-            letter-spacing: 0.15em; margin-bottom: 0.5rem; font-weight: 700; transition: color 0.4s;
-        }
-        .exp-company {
-            font-size: 2.4rem; font-weight: 700; color: #fff; margin-bottom: 0.2rem; line-height: 1.1;
-        }
-        .exp-role {
-            font-family: var(--mono); font-size: 0.95rem; color: rgba(255,255,255,0.5); font-weight: 600;
-        }
-        .exp-body {
-            font-size: 1.15rem; line-height: 1.8; color: rgba(255,255,255,0.7);
-        }
-        .exp-body ul {
-            list-style: none; margin-top: 1.5rem; margin-bottom: 2.5rem;
-        }
-        .exp-body li {
-            position: relative; padding-left: 1.8rem; margin-bottom: 1.2rem;
-        }
-        .exp-body li::before {
-            content: '›'; position: absolute; left: 0; top: -3px;
-            color: var(--red); font-family: var(--mono); font-size: 1.4rem; font-weight: 700;
-        }
-        .exp-tags {
-            display: flex; flex-wrap: wrap; gap: 0.75rem;
-        }
+        .exp-tags { display: flex; gap: 8px; flex-wrap: wrap; }
         .exp-tags span {
-            font-family: var(--mono); font-size: 0.8rem; padding: 0.5rem 1rem;
-            border: 1px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.02); font-weight: 600;
+            font-size: 0.6rem; letter-spacing: 0.1em;
+            padding: 5px 10px; border: 1px solid var(--g3); color: var(--g2);
         }
 
-        /* ══════════════════════════════════════
-           SKILLS — GLOWING DOT CARDS
-           ══════════════════════════════════════ */
-        .skills-grid {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 2rem; max-width: 1200px;
+        /* ═══════════════════════════════════════
+           PROJECTS BENTO GRID
+           ═══════════════════════════════════════ */
+        #projects { padding: 12vh 4vw; }
+        .proj-label {
+            font-size: 0.6rem; letter-spacing: 0.3em; color: var(--g2); margin-bottom: 4rem;
         }
-        .skill-card {
-            padding: 3.5rem; background: #000; border: 1px solid rgba(255,255,255,0.1);
-            transition: all 0.4s; position: relative; overflow: hidden; display: flex; flex-direction: column;
+        .bento {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr 0.7fr;
+            grid-template-rows: 320px 280px;
+            gap: 2px;
+            max-width: 1400px;
         }
-        .skill-card::after {
-            content: ''; position: absolute; inset: 0;
-            background: radial-gradient(circle at 100% 100%, rgba(212,25,32,0.15), transparent 70%);
-            opacity: 0; transition: opacity 0.4s; pointer-events: none;
+        .bento-openclaw { grid-row: 1 / 3; }
+        .terminal-output {
+            font-size: 0.72rem; line-height: 2; color: var(--g2);
         }
-        .skill-card:hover {
-            border-color: rgba(255,255,255,0.25); transform: translateY(-8px); box-shadow: 0 15px 40px rgba(0,0,0,0.8);
+        .terminal-output .cmd { color: var(--white); }
+        .terminal-output .warn { color: var(--g1); }
+        .terminal-output .cursor-blink {
+            display: inline-block; width: 8px; height: 14px;
+            background: var(--white); vertical-align: middle;
+            animation: blink 1s step-end infinite;
         }
-        .skill-card:hover::after { opacity: 1; }
-        .skill-cat {
-            font-family: var(--mono); font-size: 0.85rem; letter-spacing: 0.25em;
-            margin-bottom: 2.5rem; display: flex; align-items: center; gap: 1rem; color: #fff; font-weight: 700;
-            position: relative; z-index: 2;
-        }
-        .skill-cat .num { color: var(--red); font-weight: 700; }
-        .skill-tags { display: flex; flex-wrap: wrap; gap: 0.75rem; position: relative; z-index: 2; }
-        .tag {
-            font-size: 0.95rem; font-weight: 500; padding: 0.5rem 1.2rem;
-            border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.7); transition: all 0.3s; background: transparent;
-        }
-        .tag:hover { background: #fff; color: #000; border-color: #fff; transform: translateY(-2px);}
-        .tag.primary { background: #fff; color: #000; font-weight: 600; border-color: transparent;}
-        .tag.primary:hover { background: var(--red); color: #fff; border-color: var(--red);}
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 
-        /* ══════════════════════════════════════
-           PROJECTS
-           ══════════════════════════════════════ */
-        .project-wrap { display: grid; grid-template-columns: 1.1fr 1fr; gap: 6rem; align-items: center; max-width: 1200px; margin-bottom: 8rem; }
-        .project-wrap:nth-child(even) { grid-template-columns: 1fr 1.1fr; direction: rtl; }
-        .project-wrap:nth-child(even) > div { direction: ltr; }
-        
-        .project-frame {
-            position: relative; aspect-ratio: 16/10; border: 1px solid rgba(255,255,255,0.1); background: #050505;
-            display: flex; justify-content: center; align-items: center; transition: all 0.5s; overflow: hidden;
+        .live-dot {
+            width: 6px; height: 6px; border-radius: 50%;
+            background: var(--white); display: inline-block;
+            box-shadow: 0 0 8px rgba(255,255,255,0.5);
+            animation: blink 2s infinite alternate;
+            margin-right: 8px;
         }
-        .project-frame:hover { border-color: rgba(255,255,255,0.3); box-shadow: 0 15px 50px rgba(0,0,0,0.8); background: #000;}
-        .project-frame .corner { position: absolute; width: 35px; height: 35px; border-color: var(--red); border-style: solid; z-index: 5; transition: all 0.3s;}
-        .project-frame:hover .corner { width: 45px; height: 45px; }
-        .project-frame .c-tl { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
-        .project-frame .c-tr { top: -1px; right: -1px; border-width: 2px 2px 0 0; }
-        .project-frame .c-bl { bottom: -1px; left: -1px; border-width: 0 0 2px 2px; }
-        .project-frame .c-br { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
-        .project-frame canvas { width: 100%!important; height: 100%!important; } /* Removed mix-blend-mode: multiply for dark mode */
-        .project-frame .label {
-            position: absolute; top: 20px; left: 25px; z-index: 5; font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.2em; color: rgba(255,255,255,0.5); font-weight: 700;
+        .bento-link {
+            display: inline-block; margin-top: 1.5rem;
+            font-size: 0.7rem; letter-spacing: 0.15em;
+            color: var(--g1); text-decoration: none;
+            border-bottom: 1px solid var(--g3);
+            padding-bottom: 4px; transition: all 0.3s;
         }
-        .proj-name { font-size: clamp(2.8rem, 4vw, 3.8rem); font-weight: 700; margin-bottom: 0.5rem; letter-spacing: -0.02em; color: #fff;}
-        .proj-type { font-family: var(--mono); font-size: 0.85rem; color: var(--red); letter-spacing: 0.2em; margin-bottom: 2.5rem; font-weight: 700; }
-        .proj-desc { font-size: 1.15rem; line-height: 1.8; color: rgba(255,255,255,0.7); font-weight: 400; margin-bottom: 3rem; }
-        .proj-stack { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 3rem; }
-        .proj-stack span {
-            font-family: var(--mono); font-size: 0.8rem; padding: 0.5rem 1rem; letter-spacing: 0.05em; font-weight: 600;
-            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.8);
+        .bento-link:hover { color: #fff; border-color: #fff; }
+
+        #wireframe-container { width: 100%; height: 100%; }
+
+        .spec-list { list-style: none; }
+        .spec-list li {
+            display: flex; justify-content: space-between; align-items: baseline;
+            padding: 8px 0; border-bottom: 1px solid var(--g4);
+            font-size: 0.72rem; color: var(--g1);
+        }
+        .spec-list li span { color: var(--g2); font-size: 0.6rem; }
+        .spec-list li .dots {
+            flex: 1; margin: 0 8px;
+            border-bottom: 1px dotted var(--g3);
         }
 
-        /* ══════════════════════════════════════
-           CONTACT & FOOTER
-           ══════════════════════════════════════ */
-        .contact-flex { display: grid; grid-template-columns: 1fr 1fr; gap: 6rem; max-width: 1100px; }
-        .contact-h2 { font-size: clamp(3.5rem, 6vw, 5rem); font-weight: 300; line-height: 1.1; margin-bottom: 2.5rem; color: #fff;}
-        .contact-h2 strong { font-weight: 700; color: var(--red); }
-        .contact-p { font-size: 1.3rem; line-height: 1.8; color: rgba(255,255,255,0.65); font-weight: 400; }
-        .contact-links { display: flex; flex-direction: column; gap: 0.75rem; }
-        .c-link {
-            display: flex; align-items: center; gap: 2rem; padding: 1.8rem 2.5rem; text-decoration: none;
-            background: #000; border: 1px solid rgba(255,255,255,0.15); transition: all 0.35s;
+        .status-bar {
+            height: 3px; background: var(--g4); margin-top: 6px;
         }
-        .c-link:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.3); box-shadow: 0 6px 20px rgba(0,0,0,0.5); transform: translateX(10px); }
-        .c-link-lbl { font-family: var(--mono); font-size: 0.75rem; color: rgba(255,255,255,0.45); letter-spacing: 0.15em; width: 90px; flex-shrink: 0; font-weight: 700;}
-        .c-link-val { font-size: 1.3rem; color: rgba(255,255,255,0.7); font-weight: 600; }
-        .c-link:hover .c-link-val { color: #fff; }
-        .c-link-arr { margin-left: auto; font-size: 1.3rem; color: rgba(255,255,255,0.2); transition: all 0.3s; }
-        .c-link:hover .c-link-arr { color: var(--red); transform: translate(5px, -5px); }
-
-        .footer {
-            padding: 4rem; border-top: 1px solid rgba(255,255,255,0.15); display: flex; justify-content: space-between;
-            font-family: var(--mono); font-size: 0.7rem; color: rgba(255,255,255,0.5); font-weight: 600; letter-spacing: 0.15em; position: relative; z-index: 5; background: #000;
+        .status-bar-fill {
+            height: 100%; background: var(--white);
+            transition: width 1.5s ease;
         }
 
-        /* ══════════════════════════════════════
-           SCROLL REVEAL UTILITY
-           ══════════════════════════════════════ */
-        .sr { opacity: 0; transform: translateY(50px); transition: opacity 1s cubic-bezier(0.16, 1, 0.3, 1), transform 1s cubic-bezier(0.16, 1, 0.3, 1); }
-        .sr.vis { opacity: 1; transform: none; }
+        /* ═══════════════════════════════════════
+           CAPABILITIES: DIAGNOSTICS PANEL
+           ═══════════════════════════════════════ */
+        #capabilities { padding: 12vh 4vw; }
+        .diag-grid {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 0; max-width: 1100px;
+        }
+        .diag-section { padding: 2rem 2.5rem; font-size: 0.75rem; }
+        .diag-section:nth-child(odd) { border-right: 1px solid var(--g3); }
+        .diag-section:nth-child(n+3) { border-top: 1px solid var(--g3); }
+        .diag-title {
+            font-size: 0.6rem; letter-spacing: 0.25em; color: var(--g2); margin-bottom: 1.5rem;
+        }
+        .diag-row {
+            display: flex; justify-content: space-between;
+            padding: 6px 0; font-size: 0.72rem; color: var(--g1);
+        }
+        .diag-row span { color: var(--g2); font-size: 0.6rem; letter-spacing: 0.1em; }
+        .diag-full { grid-column: 1 / 3; border-top: 1px solid var(--g3); }
 
-        @media (max-width: 900px) {
-            nav { padding: 0 2rem; height: 60px; }
-            .nav-links, .nav-status { display: none; }
-            .mobile-toggle { display: flex; }
-            .hero { min-height: 100vh; padding-top: 8rem; padding-bottom: 8rem;}
-            .hero-content { padding: 0 2rem; margin-top: 0; }
-            .hero-h1 { font-size: 4rem; }
-            #hero-gl { width: 100%; opacity: 0.15; right: 0; pointer-events: none;}
-            .section { padding: 6rem 2rem; }
-            
-            .exp-timeline { padding: 4rem 2rem; gap: 4rem; }
-            .exp-track { left: 0; transform: none; margin-left: 2rem; }
-            .exp-row, .exp-row.right { justify-content: flex-end; width: 100%; }
-            .exp-card-wrap { width: calc(100% - 3.5rem); }
-            .exp-row:not(.right) .exp-timeline-dot, .exp-row.right .exp-timeline-dot {
-                left: -3.5rem; right: auto; transform: translateX(-50%);
-            }
-            .exp-card { padding: 2rem; }
+        /* ═══════════════════════════════════════
+           CONTACT TERMINAL
+           ═══════════════════════════════════════ */
+        #contact {
+            padding: 15vh 4vw; display: flex;
+            justify-content: center; align-items: center;
+            min-height: 70vh;
+        }
+        .contact-window { width: 560px; max-width: 90vw; }
+        .contact-line {
+            font-size: 0.75rem; line-height: 2.5; color: var(--g2);
+        }
+        .contact-line .key {
+            display: inline-block; width: 100px; color: var(--g2);
+        }
+        .contact-line a {
+            color: var(--g1); text-decoration: none;
+            border-bottom: 1px solid transparent; transition: all 0.3s;
+        }
+        .contact-line a:hover { color: #fff; border-bottom-color: #fff; }
 
-            .project-wrap, .contact-flex { grid-template-columns: 1fr; gap: 4rem; direction: ltr !important; }
-            .hero-footer { display: none; }
+        /* ═══════════════════════════════════════
+           FOOTER
+           ═══════════════════════════════════════ */
+        footer {
+            padding: 3rem 4vw; text-align: center;
+            font-size: 0.55rem; letter-spacing: 0.2em; color: var(--g2);
+            border-top: 1px solid var(--g4);
+        }
+
+        /* ═══════════════════════════════════════
+           SCROLL REVEAL
+           ═══════════════════════════════════════ */
+        .sr { opacity: 0; transform: translateY(30px); }
+
+        /* ═══════════════════════════════════════
+           RESPONSIVE
+           ═══════════════════════════════════════ */
+        @media (max-width: 1024px) {
+            .nav-links { display: none; }
+            .hero-name { font-size: 3rem; }
+            .exp-panel { max-width: 85vw; width: 100%; }
+            .bento { grid-template-columns: 1fr; grid-template-rows: auto; }
+            .bento-openclaw { grid-row: auto; }
+            .diag-grid { grid-template-columns: 1fr; }
+            .diag-section:nth-child(odd) { border-right: none; }
+            .diag-section:nth-child(n+2) { border-top: 1px solid var(--g3); }
+            .diag-full { grid-column: auto; }
+            #cursor { display: none; }
+            body { cursor: auto; }
         }
     </style>
 </head>
 <body>
 
-    <!-- NAV -->
-    <nav>
-        <div class="nav-brand"><span class="red-dot"></span>JL MEDINA</div>
-        <div class="nav-links">
-            <a href="#experience">EXPERIENCE</a>
-            <a href="#skills">SKILLS</a>
-            <a href="#projects">PROJECTS</a>
-            <a href="#education">EDUCATION</a>
-            <a href="#contact">CONTACT</a>
+    <!-- ╔══════════════════════════════════════╗
+         ║          BOOT SEQUENCE               ║
+         ╚══════════════════════════════════════╝ -->
+    <div id="boot-overlay">
+        <div class="scan-line"></div>
+        <div id="boot-text">
+            <span>[SYS] INITIALIZING DATASCAPE v2.1.0</span>
+            <span>[SYS] LOADING VERTEX BUFFER ... <span class="highlight">15,000 POINTS</span></span>
+            <span>[SYS] RENDERING PARTICLE ENGINE</span>
+            <span>[SYS] ESTABLISHING SECURE CONNECTION</span>
+            <span>[SYS] OPERATOR: <span class="highlight">JUAN LUIS MEDINA LOZANO</span></span>
+            <span>[SYS] CLEARANCE: <span class="highlight">AI EVALUATION SPECIALIST</span></span>
+            <span>[SYS] STATUS: <span class="highlight">ONLINE</span></span>
         </div>
-        <div class="nav-status"><canvas id="nav-matrix" width="120" height="16"></canvas></div>
-        <button class="mobile-toggle" onclick="toggleMenu()" aria-label="Menu"><span></span><span></span><span></span></button>
+    </div>
+
+    <!-- ╔══════════════════════════════════════╗
+         ║          CUSTOM CURSOR               ║
+         ╚══════════════════════════════════════╝ -->
+    <div id="cursor">
+        <div class="ch ch-h"></div>
+        <div class="ch ch-v"></div>
+        <div class="ch-dot"></div>
+    </div>
+
+    <!-- ╔══════════════════════════════════════╗
+         ║          HUD OVERLAY                 ║
+         ╚══════════════════════════════════════╝ -->
+    <div id="hud-frame">
+        <div class="hud-corner tl"></div>
+        <div class="hud-corner tr"></div>
+        <div class="hud-corner bl"></div>
+        <div class="hud-corner br"></div>
+    </div>
+    <div class="hud-label hud-tl" id="hud-loc">LAT 20.97°N &nbsp;/&nbsp; LON 89.62°W</div>
+    <div class="hud-label hud-tr" id="hud-clock">00:00:00</div>
+    <div class="hud-label hud-bl" id="hud-mouse">X:0000 &nbsp; Y:0000</div>
+    <div class="hud-label hud-br" id="hud-section">[BOOT]</div>
+    <div id="scroll-track"><div id="scroll-thumb"></div></div>
+
+    <!-- ╔══════════════════════════════════════╗
+         ║          THREE.JS CANVAS             ║
+         ╚══════════════════════════════════════╝ -->
+    <div id="gl-canvas"></div>
+
+    <!-- ╔══════════════════════════════════════╗
+         ║          NAVIGATION                  ║
+         ╚══════════════════════════════════════╝ -->
+    <nav id="main-nav">
+        <div class="logo">◇ JL.MEDINA</div>
+        <div class="nav-links">
+            <a href="#experience">[01] DOSSIER</a>
+            <a href="#projects">[02] OPERATIONS</a>
+            <a href="#capabilities">[03] SYSTEMS</a>
+            <a href="#contact">[04] CONNECT</a>
+        </div>
     </nav>
 
-    <!-- HERO -->
-    <section class="hero" id="hero">
-        <canvas id="hero-dots"></canvas>
-        <div id="hero-gl"></div>
-        <div class="hero-content sr vis">
-            <div class="hero-tag"><span class="line"></span>AI EVALUATION SPECIALIST</div>
-            <h1 class="hero-h1">Juan Luis<br><span class="outline-text">Medina</span> Lozano</h1>
-            <div class="hero-sub">ADVERSARIAL TESTING <span class="dot">·</span> RLHF <span class="dot">·</span> CODE ASSESSMENT</div>
-            <p class="hero-desc">AI operations and evaluation specialist with hands-on experience across the full frontier model development pipeline. Experienced in adversarial red-teaming, RLHF evaluation, and leading annotator teams at Outlier AI and Mercor. Bridging deep technical proficiency, strong people management instincts, and real-time communication to drive data quality and safety across training workflows.</p>
-            <div class="hero-btns">
-                <a href="#experience" class="btn-red">VIEW WORK →</a>
-                <a href="#contact" class="btn-outline">GET IN TOUCH</a>
+    <main>
+        <!-- ════════ HERO ════════ -->
+        <section id="hero">
+            <div class="hero-label" style="opacity:0" id="hero-label">// DATASCAPE TERMINAL v2.1</div>
+            <h1 class="hero-name" style="opacity:0" id="hero-name">JUAN LUIS<br><strong>MEDINA LOZANO</strong></h1>
+            <div class="hero-role" style="opacity:0" id="hero-role">AI EVALUATION SPECIALIST &nbsp;/&nbsp; ADVERSARIAL TESTING &nbsp;/&nbsp; RLHF</div>
+            <p class="hero-desc" style="opacity:0" id="hero-desc">
+                1.5+ years shaping frontier language and coding models through rigorous adversarial testing, structured rubrics, and RLHF feedback loops. Native bilingual EN/ES. Currently stress-testing systems at Mercor and Outlier AI.
+            </p>
+            <div class="hero-scroll" style="opacity:0" id="hero-scroll">
+                <span class="scroll-line"></span> SCROLL TO INITIALIZE
             </div>
-        </div>
-        <div class="hero-footer sr vis">
-            <span>MÉRIDA, YUCATÁN, MX</span><span>REMOTE · WORLDWIDE</span><span>EN / ES BILINGUAL</span>
-        </div>
-    </section>
+        </section>
 
-    <!-- EXPERIENCE -->
-    <section class="section section-alt" id="experience">
-        <div class="section-header sr">
-            <div class="section-num">01</div>
-            <span class="section-label">EXPERIENCE</span>
-            <span class="section-rule"></span>
-        </div>
-        
-        <div class="exp-timeline sr" id="experience-timeline">
-            <div class="exp-track"><div class="exp-track-fill"></div></div>
-            
-            <!-- Mercor Card -->
-            <div class="exp-row">
-                <div class="exp-card-wrap">
-                    <div class="exp-timeline-dot"></div>
-                    <div class="exp-card">
-                        <div class="exp-header">
-                            <div class="exp-date">JAN 2026 — PRESENT</div>
-                            <h3 class="exp-company">Mercor</h3>
-                            <div class="exp-role">AI RED-TEAMER</div>
+        <!-- ════════ EXPERIENCE: SCROLLYTELLING ════════ -->
+        <section id="experience" style="height: 500vh;">
+            <div class="exp-sticky" id="exp-sticky">
+                <div class="exp-counter" id="exp-counter">01 / 04 — DOSSIER</div>
+
+                <!-- Panel 0: Mercor -->
+                <div class="exp-panel window" id="exp-0">
+                    <div class="window-bar">
+                        <span>Dossier — Mercor</span>
+                        <div class="window-dots"><span></span><span></span></div>
+                    </div>
+                    <div class="window-body">
+                        <div class="date">JAN 2026 — PRESENT</div>
+                        <h3>Mercor</h3>
+                        <div class="role">AI RED-TEAMER</div>
+                        <ul>
+                            <li>Executes adversarial safety evaluations against frontier AI models — jailbreaks, prompt injection, boundary testing, and multimodal attacks.</li>
+                            <li>Develops structured vulnerability taxonomies, generates adversarial datasets, and builds actionable threat models.</li>
+                            <li>Delivers after-action risk reports with production-grade remediation strategies.</li>
+                        </ul>
+                        <div class="exp-tags"><span>ADVERSARIAL</span><span>THREAT MODELING</span><span>SAFETY</span></div>
+                    </div>
+                </div>
+
+                <!-- Panel 1: Outlier Code -->
+                <div class="exp-panel window" id="exp-1">
+                    <div class="window-bar">
+                        <span>Dossier — Outlier AI</span>
+                        <div class="window-dots"><span></span><span></span></div>
+                    </div>
+                    <div class="window-body">
+                        <div class="date">JUL 2025 — PRESENT</div>
+                        <h3>Outlier AI</h3>
+                        <div class="role">AI CODE EVALUATOR</div>
+                        <ul>
+                            <li>Evaluates AI-generated code across Python, JavaScript/TS, C#, and Java against complex instruction-following rubrics.</li>
+                            <li>Writes atomic evaluation criteria and golden responses to calibrate model training baselines.</li>
+                            <li>Operates within OpenClaw structured evaluation and quality workflows.</li>
+                        </ul>
+                        <div class="exp-tags"><span>CODE QA</span><span>RLHF</span><span>PYTHON</span><span>OPENCLAW</span></div>
+                    </div>
+                </div>
+
+                <!-- Panel 2: Outlier LATAM -->
+                <div class="exp-panel window" id="exp-2">
+                    <div class="window-bar">
+                        <span>Dossier — Outlier AI (LATAM)</span>
+                        <div class="window-dots"><span></span><span></span></div>
+                    </div>
+                    <div class="window-body">
+                        <div class="date">2024 — 2025 &nbsp; [PROMOTED]</div>
+                        <h3>Outlier AI</h3>
+                        <div class="role">SQUAD REVIEWER & LANGUAGE TRAINER</div>
+                        <ul>
+                            <li>Oversaw onboarding for a cohort of ~15 annotators, hosted alignment webinars on quality standards and platform navigation.</li>
+                            <li>Evaluated new hires' first task submissions to determine project eligibility with structured feedback cycles.</li>
+                            <li>Co-authored annotator guidelines documentation aligned to strict client constraints.</li>
+                        </ul>
+                        <div class="exp-tags"><span>LEADERSHIP</span><span>QUALITY COACHING</span><span>DOCUMENTATION</span></div>
+                    </div>
+                </div>
+
+                <!-- Panel 3: Country Credit Club -->
+                <div class="exp-panel window" id="exp-3">
+                    <div class="window-bar">
+                        <span>Dossier — Country Credit Club</span>
+                        <div class="window-dots"><span></span><span></span></div>
+                    </div>
+                    <div class="window-body">
+                        <div class="date">FEB 2024 — APR 2025 &nbsp; [PROMOTED]</div>
+                        <h3>Country Credit Club</h3>
+                        <div class="role">SALES QUALITY SPECIALIST</div>
+                        <ul>
+                            <li>Conducted high-volume B2B outbound operations; promoted to a quality assurance role delivering performance reviews to a team of 4.</li>
+                            <li>Evolved pitch strategies from observed conversion metrics and managed follow-up pipelines.</li>
+                        </ul>
+                        <div class="exp-tags"><span>B2B OPS</span><span>QUALITY ASSURANCE</span><span>ANALYTICS</span></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ════════ PROJECTS: BENTO GRID ════════ -->
+        <section id="projects">
+            <div class="proj-label">[02] OPERATIONS — ACTIVE DEPLOYMENTS</div>
+
+            <div class="bento">
+                <!-- 1. OpenClaw Terminal (large, spans 2 rows) -->
+                <div class="window bento-openclaw sr">
+                    <div class="window-bar">
+                        <span>OpenClaw RL — Agent Eval Terminal</span>
+                        <div class="window-dots"><span></span><span></span></div>
+                    </div>
+                    <div class="window-body">
+                        <div class="terminal-output" id="terminal-text">
+                            <div><span class="cmd">$ python -m openclaw.eval \</span></div>
+                            <div>&nbsp;&nbsp;<span class="cmd">--model gpt-4o --task web_nav</span></div>
+                            <div>&nbsp;</div>
+                            <div>[INIT] Loading evaluation suite...</div>
+                            <div>[TASK] Navigate to target URL</div>
+                            <div>[TASK] Extract structured pricing data</div>
+                            <div>[TASK] Compile JSON report</div>
+                            <div>&nbsp;</div>
+                            <div>[EVAL] Instruction adherence: <span class="cmd">PASS</span></div>
+                            <div>[EVAL] Tool usage accuracy: &nbsp;<span class="cmd">PASS</span></div>
+                            <div>[EVAL] Safety compliance: &nbsp;&nbsp;<span class="warn">▓▓▓ FAIL</span></div>
+                            <div>&nbsp;</div>
+                            <div>[WARN] Prompt injection detected</div>
+                            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; at step 3: unauthorized</div>
+                            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; data access attempted</div>
+                            <div>&nbsp;</div>
+                            <div>Report: ./outputs/eval_04192026.json</div>
+                            <div><span class="cmd">$</span> <span class="cursor-blink"></span></div>
                         </div>
-                        <div class="exp-body">
-                            <ul>
-                                <li>Leads adversarial safety evaluations against frontier AI models, executing jailbreaks, prompt injections, boundary testing, and multimodal attack scenarios to expose model vulnerabilities before production deployment.</li>
-                                <li>Develops structured vulnerability taxonomies and adversarial datasets, builds threat models, and delivers after-action risk reports with remediation strategies that scale across client pipelines.</li>
-                                <li>Operates as a trusted independent contributor, self-managing task queues and reporting directly to technical leads across time zones.</li>
-                            </ul>
-                            <div class="exp-tags">
-                                <span>Adversarial Testing</span><span>Threat Modeling</span><span>Vulnerability Taxonomy</span>
-                            </div>
+                        <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--g4);">
+                            <p style="font-size: 0.72rem; line-height: 1.8; color: var(--g2);">
+                                Multi-step agentic evaluation — OpenClaw. Designs adversarial agent task briefs, evaluates tool coordination failures, and authors pytest verifiers.
+                            </p>
+                            <div class="exp-tags" style="margin-top: 1rem;"><span>PYTHON</span><span>PYTEST</span><span>AGENTIC AI</span><span>TAXONOMY</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. GlobaLeads -->
+                <div class="window sr">
+                    <div class="window-bar">
+                        <span>GlobaLeads22 — B2B Lead Engine</span>
+                        <div class="window-dots"><span></span><span></span></div>
+                    </div>
+                    <div class="window-body">
+                        <div style="margin-bottom: 12px;"><span class="live-dot"></span><span style="font-size: 0.6rem; letter-spacing: 0.2em; color: var(--g2);">LIVE DEPLOYMENT</span></div>
+                        <p style="font-size: 0.72rem; line-height: 1.8; color: var(--g1); margin-bottom: 1rem; font-weight: 300;">
+                            AI-powered SaaS MVP. Fuses Google Maps API + Firecrawl extraction + Claude API for real-time B2B lead scoring.
+                        </p>
+                        <div class="exp-tags" style="margin-bottom: 0.5rem;"><span>REACT</span><span>CLAUDE API</span><span>POSTGRESQL</span></div>
+                        <a href="https://globaleads22.com" target="_blank" class="bento-link">ACCESS SYSTEM ↗</a>
+                    </div>
+                </div>
+
+                <!-- 3. 3D Wireframe Widget -->
+                <div class="window sr">
+                    <div class="window-bar">
+                        <span>Render.obj — Torus</span>
+                        <div class="window-dots"><span></span><span></span></div>
+                    </div>
+                    <div class="window-body" style="padding: 0; height: calc(100% - 33px);">
+                        <div id="wireframe-container"></div>
+                    </div>
+                </div>
+
+                <!-- 4. Tech Stack -->
+                <div class="window sr">
+                    <div class="window-bar">
+                        <span>Stack.config</span>
+                        <div class="window-dots"><span></span><span></span></div>
+                    </div>
+                    <div class="window-body">
+                        <ul class="spec-list">
+                            <li>Python <span class="dots"></span> <span>v3.11</span></li>
+                            <li>TypeScript <span class="dots"></span> <span>v5.x</span></li>
+                            <li>React <span class="dots"></span> <span>v18</span></li>
+                            <li>Java / C# <span class="dots"></span> <span>ACTIVE</span></li>
+                            <li>Claude API <span class="dots"></span> <span>NATIVE</span></li>
+                            <li>Firecrawl <span class="dots"></span> <span>ACTIVE</span></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- 5. Status Monitor -->
+                <div class="window sr">
+                    <div class="window-bar">
+                        <span>Status.mon</span>
+                        <div class="window-dots"><span></span><span></span></div>
+                    </div>
+                    <div class="window-body" style="font-size: 0.7rem;">
+                        <div style="color: var(--g2); margin-bottom: 12px;">SYS: <span style="color: #fff;">ONLINE</span></div>
+                        <div style="color: var(--g2); margin-bottom: 4px;">UPTIME</div>
+                        <div class="status-bar"><div class="status-bar-fill" id="uptime-bar" style="width:0%"></div></div>
+                        <div style="color: var(--g2); margin-top: 12px; margin-bottom: 4px;">SIGNAL</div>
+                        <div class="status-bar"><div class="status-bar-fill" id="signal-bar" style="width:0%"></div></div>
+                        <div style="color: var(--g2); margin-top: 16px; font-size: 0.6rem; letter-spacing: 0.15em;" id="live-coords">
+                            X: 4521 &nbsp; Y: 8834<br>Z: 1092 &nbsp; Δ: 0.003
                         </div>
                     </div>
                 </div>
             </div>
+        </section>
 
-            <!-- Outlier AI (Code Evaluator) -->
-            <div class="exp-row right">
-                <div class="exp-card-wrap">
-                    <div class="exp-timeline-dot"></div>
-                    <div class="exp-card">
-                        <div class="exp-header">
-                            <div class="exp-date">JUL 2025 — PRESENT</div>
-                            <h3 class="exp-company">Outlier AI</h3>
-                            <div class="exp-role">AI CODE EVALUATOR</div>
-                        </div>
-                        <div class="exp-body">
-                            <ul>
-                                <li>Evaluates AI-generated code across Python, JavaScript, TypeScript, C#, and Java against correctness, instruction-following, and multi-dimensional quality rubrics.</li>
-                                <li>Authors atomic evaluation criteria and golden response rewrites that define quality benchmarks for RLHF training cycles.</li>
-                                <li>Contributes to the OpenClaw RL (Reinforcement Learning) project, designing and running complex agentic evaluation tasks that compare LLM performance on multi-step agent coordination — see Projects section.</li>
-                            </ul>
-                            <div class="exp-tags">
-                                <span>Python / TS / Java</span><span>RLHF</span><span>Code Generation QA</span><span>OpenClaw</span>
-                            </div>
-                        </div>
-                    </div>
+        <!-- ════════ CAPABILITIES: SYSTEM DIAGNOSTICS ════════ -->
+        <section id="capabilities">
+            <div class="window sr" style="max-width: 1100px;">
+                <div class="window-bar">
+                    <span>System Diagnostics — Operator Profile</span>
+                    <div class="window-dots"><span></span><span></span></div>
                 </div>
-            </div>
-
-            <!-- Outlier AI (Squad Reviewer) -->
-            <div class="exp-row">
-                <div class="exp-card-wrap">
-                    <div class="exp-timeline-dot"></div>
-                    <div class="exp-card">
-                        <div class="exp-header">
-                            <div class="exp-date">SEP 2025 — MAR 2026</div>
-                            <h3 class="exp-company">Outlier AI — LATAM Coders Team</h3>
-                            <div class="exp-role">SQUAD REVIEWER</div>
+                <div class="window-body" style="padding: 0;">
+                    <div class="diag-grid">
+                        <div class="diag-section">
+                            <div class="diag-title">EVALUATION PROTOCOLS</div>
+                            <div class="diag-row">RLHF Feedback <span>// CORE</span></div>
+                            <div class="diag-row">Rubric Generation <span>// CORE</span></div>
+                            <div class="diag-row">Code QA Pipeline <span>// CORE</span></div>
+                            <div class="diag-row">Golden Responses <span>// CORE</span></div>
+                            <div class="diag-row">Bias Detection <span>// ACTIVE</span></div>
                         </div>
-                        <div class="exp-body">
-                            <ul>
-                                <li>Informally promoted by Project Team Leaders to manage the onboarding pipeline for a cohort of ~15 annotators on a large-scale AI web search training project.</li>
-                                <li>Hosted and facilitated onboarding webinars, walking new contributors through task requirements, quality standards, and platform workflows to accelerate time-to-productivity.</li>
-                                <li>Evaluated each annotator’s initial task submissions to assess readiness, determine project eligibility, and deliver structured, actionable feedback to support performance improvement.</li>
-                                <li>Co-authored annotator guideline documentation based on evolving client constraints, ensuring cross-team consistency and compliance at scale.</li>
-                            </ul>
-                            <div class="exp-tags">
-                                <span>Quality Coaching</span><span>Leadership</span><span>Guidelines Authoring</span>
-                            </div>
+                        <div class="diag-section">
+                            <div class="diag-title">SAFETY ALIGNMENT</div>
+                            <div class="diag-row">System Red-Teaming <span>// CORE</span></div>
+                            <div class="diag-row">Jailbreak Sequencing <span>// ACTIVE</span></div>
+                            <div class="diag-row">Prompt Injection <span>// CORE</span></div>
+                            <div class="diag-row">Threat Modeling <span>// ACTIVE</span></div>
+                            <div class="diag-row">Vulnerability Taxonomy <span>// ACTIVE</span></div>
                         </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Outlier AI (Language Trainer) -->
-            <div class="exp-row right">
-                <div class="exp-card-wrap">
-                    <div class="exp-timeline-dot"></div>
-                    <div class="exp-card">
-                        <div class="exp-header">
-                            <div class="exp-date">OCT 2024 — JUL 2025</div>
-                            <h3 class="exp-company">Outlier AI</h3>
-                            <div class="exp-role">AI LANGUAGE TRAINER — SPANISH / MEXICO</div>
+                        <div class="diag-section">
+                            <div class="diag-title">LANGUAGES</div>
+                            <div class="diag-row">English <span>// NATIVE</span></div>
+                            <div class="diag-row">Spanish <span>// NATIVE</span></div>
+                            <div class="diag-row">French <span>// LIMITED</span></div>
+                            <div class="diag-row">Mandarin <span>// BASIC</span></div>
                         </div>
-                        <div class="exp-body">
-                            <ul>
-                                <li>Engineered diverse prompt sets and controlled response deviations to surface model weaknesses in Spanish-language outputs across cultural, linguistic, and contextual dimensions.</li>
-                                <li>Reviewed AI outputs against detailed quality rubrics, identifying and flagging biases, inconsistencies, and inaccuracies to maintain training data integrity at scale.</li>
-                            </ul>
-                            <div class="exp-tags">
-                                <span>Spanish Linguistics</span><span>Bias Mitigation</span><span>Prompt Generation</span>
-                            </div>
+                        <div class="diag-section">
+                            <div class="diag-title">TOOLING</div>
+                            <div class="diag-row">OpenClaw <span>// INTERNAL</span></div>
+                            <div class="diag-row">Claude API <span>// NATIVE</span></div>
+                            <div class="diag-row">Firecrawl <span>// CORE</span></div>
+                            <div class="diag-row">Google Maps API <span>// CORE</span></div>
+                            <div class="diag-row">n8n Automation <span>// ACTIVE</span></div>
+                        </div>
+                        <div class="diag-section diag-full">
+                            <div class="diag-title">EDUCATION</div>
+                            <div class="diag-row">UADY — B.Eng Mechatronics, Robotics & Automation <span>2022 — 2027</span></div>
+                            <div class="diag-row">Platzi — Diploma in Frontend Development <span>2021</span></div>
                         </div>
                     </div>
                 </div>
             </div>
+        </section>
 
-            <!-- Country Credit Club -->
-            <div class="exp-row">
-                <div class="exp-card-wrap">
-                    <div class="exp-timeline-dot"></div>
-                    <div class="exp-card">
-                        <div class="exp-header">
-                            <div class="exp-date">FEB 2024 — APR 2025</div>
-                            <h3 class="exp-company">Country Credit Club</h3>
-                            <div class="exp-role">SALES DEV REP / ONBOARDING SPECIALIST</div>
-                        </div>
-                        <div class="exp-body">
-                            <ul>
-                                <li>Began as a B2B outbound sales representative, conducting high-volume cold calls to small and medium-sized businesses across the United States to promote financial services solutions.</li>
-                                <li>Promoted to an internal quality assurance role, delivering structured performance coaching and call feedback to a team of 4 outbound representatives, improving pitch consistency and conversion rates.</li>
-                                <li>Took ownership of evolving the team’s target pitch strategy based on observed performance patterns, and managed warm lead follow-up pipelines to drive account progression through the sales cycle.</li>
-                            </ul>
-                            <div class="exp-tags">
-                                <span>B2B Sales</span><span>Quality Assurance</span><span>Operations</span>
-                            </div>
-                        </div>
+        <!-- ════════ CONTACT TERMINAL ════════ -->
+        <section id="contact">
+            <div class="contact-window window">
+                <div class="window-bar">
+                    <span>Transmission — Establish Connection</span>
+                    <div class="window-dots"><span></span><span></span></div>
+                </div>
+                <div class="window-body">
+                    <div class="contact-line"><span class="key">EMAIL</span>———— <a href="mailto:bluebirdluis@hotmail.com">bluebirdluis@hotmail.com</a></div>
+                    <div class="contact-line"><span class="key">PHONE</span>———— <a href="tel:+529994575063">+52 999 457 5063</a></div>
+                    <div class="contact-line"><span class="key">LINKEDIN</span>—— <a href="https://linkedin.com/in/juan-luis-medina-lozano-8a97b0223" target="_blank">juan-luis-medina-lozano</a></div>
+                    <div class="contact-line"><span class="key">GITHUB</span>———— <a href="https://github.com/KoiGi01" target="_blank">KoiGi01</a></div>
+                    <div style="margin-top: 2rem; font-size: 0.6rem; color: var(--g2); letter-spacing: 0.15em; line-height: 2.2;">
+                        [LOCATION: 20.97°N, 89.62°W — MÉRIDA, YUCATÁN]<br>
+                        [STATUS: ACCEPTING REMOTE CONTRACTS]<br>
+                        <span style="margin-top: 0.5rem; display: inline-block;">>&nbsp;<span class="cursor-blink"></span></span>
                     </div>
                 </div>
             </div>
-            
-            <!-- TELUS -->
-            <div class="exp-row right">
-                <div class="exp-card-wrap">
-                    <div class="exp-timeline-dot"></div>
-                    <div class="exp-card">
-                        <div class="exp-header">
-                            <div class="exp-date">AUG 2023 — JAN 2024</div>
-                            <h3 class="exp-company">TELUS International AI Data Solutions</h3>
-                            <div class="exp-role">DATA ANALYST</div>
-                        </div>
-                        <div class="exp-body">
-                            <ul>
-                                <li>Analyzed and annotated diverse content formats entering machine learning pipelines, ensuring training data quality, consistency, and compliance with labeling guidelines.</li>
-                            </ul>
-                            <div class="exp-tags">
-                                <span>Data Annotation</span><span>Machine Learning pipelines</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        </section>
+    </main>
 
-            <!-- LanguageLine -->
-            <div class="exp-row">
-                <div class="exp-card-wrap">
-                    <div class="exp-timeline-dot"></div>
-                    <div class="exp-card">
-                        <div class="exp-header">
-                            <div class="exp-date">AUG 2021 — MAY 2022</div>
-                            <h3 class="exp-company">LanguageLine Solutions</h3>
-                            <div class="exp-role">ENGLISH-SPANISH INTERPRETER</div>
-                        </div>
-                        <div class="exp-body">
-                            <ul>
-                                <li>Delivered real-time interpretation across medical, legal, banking, and emergency scenarios, serving as a critical communication bridge between English and Spanish-speaking parties under high-pressure, time-sensitive conditions.</li>
-                                <li>Developed strong active listening, de-escalation, and clear communication instincts through consistent exposure to sensitive and high-stakes interactions.</li>
-                            </ul>
-                            <div class="exp-tags">
-                                <span>Interpretation</span><span>Bilingual</span><span>High-Pressure Communication</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    <footer>© 2026 JUAN LUIS MEDINA LOZANO &nbsp;/&nbsp; ALL SYSTEMS OPERATIONAL</footer>
 
-            <!-- Fiverr -->
-            <div class="exp-row right">
-                <div class="exp-card-wrap">
-                    <div class="exp-timeline-dot"></div>
-                    <div class="exp-card">
-                        <div class="exp-header">
-                            <div class="exp-date">NOV 2021 — MAR 2022</div>
-                            <h3 class="exp-company">Fiverr</h3>
-                            <div class="exp-role">FRONT-END DEVELOPER (FREELANCE)</div>
-                        </div>
-                        <div class="exp-body">
-                            <ul>
-                                <li>Built client-facing web interfaces using JavaScript and modern web APIs, managing client relationships and delivering projects independently end-to-end.</li>
-                            </ul>
-                            <div class="exp-tags">
-                                <span>JavaScript</span><span>Web APIs</span><span>Frontend Design</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-    </section>
-
-    <!-- SKILLS -->
-    <section class="section" id="skills">
-        <div class="section-header sr">
-            <div class="section-num">02</div>
-            <span class="section-label">CAPABILITIES</span>
-            <span class="section-rule"></span>
-        </div>
-        <div class="skills-grid sr">
-            <div class="skill-card">
-                <div class="skill-cat"><span class="num">01.</span> AI EVALUATION & ALIGNMENT</div>
-                <div class="skill-tags">
-                    <span class="tag primary">RLHF</span><span class="tag primary">Rubric Design</span><span class="tag">Code QA</span>
-                    <span class="tag">Response Grading</span><span class="tag">Golden Response Authoring</span><span class="tag">Bias Detection</span>
-                    <span class="tag">Trajectory Analysis</span><span class="tag">Responsible AI</span>
-                </div>
-            </div>
-            <div class="skill-card">
-                <div class="skill-cat"><span class="num">02.</span> AI SAFETY & RED-TEAMING</div>
-                <div class="skill-tags">
-                    <span class="tag primary">Adversarial Testing</span><span class="tag primary">Prompt Injection</span><span class="tag">Jailbreaking</span>
-                    <span class="tag">Boundary Testing</span><span class="tag">Threat Modeling</span><span class="tag">Vulnerability Taxonomy Development</span><span class="tag">Safety Annotation</span>
-                </div>
-            </div>
-            <div class="skill-card">
-                <div class="skill-cat"><span class="num">03.</span> AGENTIC AI & LLM TOOLING</div>
-                <div class="skill-tags">
-                    <span class="tag primary">Agentic Workflow Design</span><span class="tag primary">Multi-Step Agent Evaluation</span><span class="tag">LLM Benchmarking</span>
-                    <span class="tag">Prompt Engineering</span><span class="tag">Claude API</span><span class="tag">OpenAI API</span>
-                </div>
-            </div>
-            <div class="skill-card">
-                <div class="skill-cat"><span class="num">04.</span> AI-NATIVE DEVELOPMENT TOOLS</div>
-                <div class="skill-tags">
-                    <span class="tag">Cursor</span><span class="tag">Claude Code</span><span class="tag">Windsurf</span>
-                    <span class="tag">Ollama</span><span class="tag">ComfyUI</span>
-                </div>
-            </div>
-            <div class="skill-card">
-                <div class="skill-cat"><span class="num">05.</span> PEOPLE & TEAM MANAGEMENT</div>
-                <div class="skill-tags">
-                    <span class="tag primary">Annotator Onboarding</span><span class="tag.primary">Webinar Facilitation</span><span class="tag">Performance Evaluation</span>
-                    <span class="tag">Quality Coaching</span><span class="tag">Guideline Documentation</span><span class="tag">Distributed Team Leadership</span><span class="tag">Cross-Functional Collaboration</span>
-                </div>
-            </div>
-            <div class="skill-card">
-                <div class="skill-cat"><span class="num">06.</span> PROGRAMMING</div>
-                <div class="skill-tags">
-                    <span class="tag primary">Python</span><span class="tag primary">JavaScript/TypeScript</span><span class="tag">C#</span>
-                    <span class="tag">Java</span><span class="tag">SQL</span><span class="tag">React</span>
-                </div>
-            </div>
-            <div class="skill-card">
-                <div class="skill-cat"><span class="num">07.</span> TOOLING & PLATFORMS</div>
-                <div class="skill-tags">
-                    <span class="tag">Vercel</span><span class="tag">Firecrawl</span><span class="tag">Google Maps API</span><span class="tag">n8n</span>
-                    <span class="tag">pytest</span><span class="tag">Slack</span><span class="tag">Hubspot</span><span class="tag">Notion</span><span class="tag">Salesforce</span><span class="tag">Zendesk</span>
-                </div>
-            </div>
-            <div class="skill-card">
-                <div class="skill-cat"><span class="num">08.</span> LANGUAGES</div>
-                <div class="skill-tags">
-                    <span class="tag primary">English (Native)</span><span class="tag primary">Spanish (Native)</span>
-                    <span class="tag">French (Limited Working)</span>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- PROJECTS -->
-    <section class="section section-alt" id="projects">
-        <div class="section-header sr">
-            <div class="section-num">03</div>
-            <span class="section-label">PROJECTS</span>
-            <span class="section-rule"></span>
-        </div>
-        
-        <!-- OpenClaw Project -->
-        <div class="project-wrap sr">
-            <div class="project-frame" id="project-hover-target-2">
-                <span class="corner c-tl"></span><span class="corner c-tr"></span>
-                <span class="corner c-bl"></span><span class="corner c-br"></span>
-                <span class="label" style="font-family: var(--mono); color: var(--red);">PRIVATE // INTERNAL TOOLING</span>
-                
-                <!-- Abstract visual representation of OpenClaw with white text/grids for dark mode -->
-                <div style="width: 100%; height: 100%; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; opacity: 0.2; background: radial-gradient(circle at center, #fff 1px, transparent 1px) 0 0/15px 15px;">
-                    <div style="font-family: var(--mono); font-size: 8rem; font-weight: 700; color: #fff; letter-spacing: -0.05em;">{...}</div>
-                </div>
-            </div>
-            <div>
-                <h3 class="proj-name">Trading Assistant</h3>
-                <div class="proj-type">PERSONAL PROJECT</div>
-                <div class="proj-desc">
-                    <p>Architected an agentic OpenClaw based assistant using Node.js, the Capital.com REST API, and Claude API. Runs on a daily cron job, cross-references my live portfolio positions against breaking financial news, and delivers trade recommendations via WhatsApp (Twilio) with an approve/reject execution loop.</p>
-                </div>
-                <div class="proj-stack">
-                    <span>Node.js</span><span>Capital.com API</span><span>Twilio / WhatsApp</span><span>Claude API</span><span>OpenClaw</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- GlobaLeads22 Project -->
-        <div class="project-wrap sr">
-            <div class="project-frame" id="project-hover-target">
-                <span class="corner c-tl"></span><span class="corner c-tr"></span>
-                <span class="corner c-bl"></span><span class="corner c-br"></span>
-                <span class="label" style="font-family: var(--mono); color: var(--red); background: #000; padding: 0.2rem 0.5rem;">LIVE // SYSTEM</span>
-                
-                <img src="globaleads-preview.png" alt="GlobaLeads22 Platform Preview" style="width: 100%; height: 100%; object-fit: cover; opacity: 0.8; transition: opacity 0.4s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">
-
-            </div>
-            <div>
-                <h3 class="proj-name">GlobaLeads22</h3>
-                <div class="proj-type">AI-POWERED B2B LEAD GENERATION</div>
-                <p class="proj-desc">Founded and built an AI-powered B2B lead generation SaaS from scratch, integrating the Google Maps API, Firecrawl, and Claude API for real-time lead discovery and scoring. Built end-to-end with React and deployed on Vercel.</p>
-                <div class="proj-stack">
-                    <span>React</span><span>Claude API</span><span>Firecrawl</span><span>PostgreSQL</span>
-                </div>
-                <a href="https://globaleads22.com" target="_blank" class="btn-red">VISIT PLATFORM ↗</a>
-            </div>
-        </div>
-    </section>
-
-    <!-- EDUCATION -->
-    <section class="section" id="education">
-        <div class="section-header sr">
-            <div class="section-num">04</div>
-            <span class="section-label">EDUCATION</span>
-            <span class="section-rule"></span>
-        </div>
-        <div class="exp-timeline sr" id="education-timeline" style="max-width: 1200px; padding: 2rem 0;">
-            <div class="exp-track"><div class="exp-track-fill"></div></div>
-            
-            <div class="exp-row">
-                <div class="exp-card-wrap">
-                    <div class="exp-timeline-dot"></div>
-                    <div class="exp-card" style="padding-bottom: 3rem;">
-                        <div class="exp-header" style="border: none; padding-bottom: 0; margin-bottom: 0;">
-                            <div class="exp-date">COMPLETED 4 OF 5 YEARS (PAUSED)</div>
-                            <h3 class="exp-company">Universidad Autónoma de Yucatán (UADY)</h3>
-                            <div class="exp-role">BACHELOR’S DEGREE IN MECHATRONICS, ROBOTICS AND AUTOMATION ENGINEERING</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="exp-row right">
-                <div class="exp-card-wrap">
-                    <div class="exp-timeline-dot"></div>
-                    <div class="exp-card">
-                        <div class="exp-header" style="border: none; padding-bottom: 0; margin-bottom: 0;">
-                            <div class="exp-date">SEP 2021 — DEC 2021</div>
-                            <h3 class="exp-company">Platzi</h3>
-                            <div class="exp-role">DIPLOMA IN FRONT END DEVELOPMENT</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-    </section>
-
-    <!-- CONTACT -->
-    <section class="section section-alt" id="contact">
-        <div class="section-header sr">
-            <div class="section-num">05</div>
-            <span class="section-label">CONTACT</span>
-            <span class="section-rule"></span>
-        </div>
-        <div class="contact-flex sr">
-            <div>
-                <h2 class="contact-h2">Let's work<br><strong>together.</strong></h2>
-                <p class="contact-p">Based in Mérida, Yucatán, Mexico. Open to remote opportunities worldwide in AI evaluation, safety alignment, and quality operations.</p>
-            </div>
-            <div class="contact-links">
-                <a href="mailto:bluebirdluis@hotmail.com" class="c-link">
-                    <span class="c-link-lbl">EMAIL</span><span class="c-link-val">bluebirdluis@hotmail.com</span><span class="c-link-arr">↗</span>
-                </a>
-                <a href="tel:+529994575063" class="c-link">
-                    <span class="c-link-lbl">PHONE</span><span class="c-link-val">+52 999 457 5063</span><span class="c-link-arr">↗</span>
-                </a>
-                <a href="https://linkedin.com/in/juan-luis-medina-lozano-8a97b0223" target="_blank" class="c-link">
-                    <span class="c-link-lbl">LINKEDIN</span><span class="c-link-val">juan-luis-medina-lozano</span><span class="c-link-arr">↗</span>
-                </a>
-                <a href="https://github.com/KoiGi01" target="_blank" class="c-link">
-                    <span class="c-link-lbl">GITHUB</span><span class="c-link-val">KoiGi01</span><span class="c-link-arr">↗</span>
-                </a>
-            </div>
-        </div>
-    </section>
-
-    <footer class="footer">
-        <span>© 2026 JUAN LUIS MEDINA LOZANO</span>
-        <span>ENGINEERED FOR EXCELLENCE</span>
-    </footer>
-
-    <!-- SCRIPTS -->
+    <!-- ╔══════════════════════════════════════╗
+         ║          ENGINE                      ║
+         ╚══════════════════════════════════════╝ -->
     <script>
+    gsap.registerPlugin(ScrollTrigger);
 
-    /* ────────────────────────────────────────
-       ABSTRACT DOT-WAVE HERO BACKGROUND
-       ──────────────────────────────────────── */
-    (function initHeroDots() {
-        const canvas = document.getElementById('hero-dots');
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    /* ═══════════════════════════════════════════════════════════
+       1. THREE.JS — PARTICLE MORPH ENGINE
+       ═══════════════════════════════════════════════════════════ */
+    const COUNT = 8000;
+    const container = document.getElementById('gl-canvas');
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x000000, 0.035);
 
-        let dots = [];
-        let w, h;
-        
-        function buildDots() {
-            w = canvas.clientWidth;
-            h = canvas.clientHeight;
-            canvas.width = w * dpr;
-            canvas.height = h * dpr;
-            ctx.scale(dpr, dpr);
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 200);
+    camera.position.set(0, 2, 28);
 
-            dots = [];
-            const step = 20;
-            const cols = Math.ceil(w / step);
-            const rows = Math.ceil(h / step);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    container.appendChild(renderer.domElement);
 
-            for(let i=0; i<rows; i++) {
-                for(let j=0; j<cols; j++) {
-                    dots.push({
-                        x: j * step, y: i * step,
-                        baseR: 1.5,
-                        offsetX: (j * step) * 0.003,
-                        offsetY: (i * step) * 0.005
-                    });
-                }
+    // ── Morph Target Generators ──
+    function genSphere(n, r) {
+        const a = new Float32Array(n * 3);
+        for (let i = 0; i < n; i++) {
+            const phi = Math.acos(2 * Math.random() - 1);
+            const theta = Math.random() * Math.PI * 2;
+            a[i*3]   = r * Math.sin(phi) * Math.cos(theta);
+            a[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
+            a[i*3+2] = r * Math.cos(phi);
+        }
+        return a;
+    }
+    function genIcosahedron(n, r) {
+        const geo = new THREE.IcosahedronGeometry(r, 3);
+        const v = geo.attributes.position.array;
+        const vCount = v.length / 3;
+        const a = new Float32Array(n * 3);
+        for (let i = 0; i < n; i++) {
+            const idx = Math.floor(Math.random() * vCount) * 3;
+            a[i*3]   = v[idx]   + (Math.random() - 0.5) * 0.15;
+            a[i*3+1] = v[idx+1] + (Math.random() - 0.5) * 0.15;
+            a[i*3+2] = v[idx+2] + (Math.random() - 0.5) * 0.15;
+        }
+        geo.dispose();
+        return a;
+    }
+    function genCube(n, s) {
+        const a = new Float32Array(n * 3);
+        const h = s / 2;
+        for (let i = 0; i < n; i++) {
+            const f = Math.floor(Math.random() * 6);
+            let x, y, z;
+            switch(f) {
+                case 0: x =  h; y = (Math.random()-0.5)*s; z = (Math.random()-0.5)*s; break;
+                case 1: x = -h; y = (Math.random()-0.5)*s; z = (Math.random()-0.5)*s; break;
+                case 2: y =  h; x = (Math.random()-0.5)*s; z = (Math.random()-0.5)*s; break;
+                case 3: y = -h; x = (Math.random()-0.5)*s; z = (Math.random()-0.5)*s; break;
+                case 4: z =  h; x = (Math.random()-0.5)*s; y = (Math.random()-0.5)*s; break;
+                case 5: z = -h; x = (Math.random()-0.5)*s; y = (Math.random()-0.5)*s; break;
             }
+            a[i*3] = x; a[i*3+1] = y; a[i*3+2] = z;
         }
-
-        buildDots();
-
-        function draw(time) {
-            ctx.clearRect(0, 0, w, h);
-            const t = time * 0.0005;
-
-            // Dark mode uses white dots
-            ctx.fillStyle = '#ffffff';
-            for(let i=0; i<dots.length; i++) {
-                const d = dots[i];
-                const wave1 = Math.sin(d.offsetX + t) * Math.cos(d.offsetY + t * 0.8);
-                const wave2 = Math.sin(d.offsetX * 1.5 - t * 0.5);
-                const combined = (wave1 + wave2) * 0.5;
-
-                const alpha = 0.03 + Math.max(0, combined * 0.12);
-                const radius = d.baseR + Math.max(0, combined * 1.5);
-                
-                ctx.globalAlpha = alpha;
-                ctx.beginPath();
-                ctx.arc(d.x, d.y, radius, 0, Math.PI * 2);
-                ctx.fill();
-            }
-            requestAnimationFrame(draw);
+        return a;
+    }
+    function genTorus(n, R, r) {
+        const a = new Float32Array(n * 3);
+        for (let i = 0; i < n; i++) {
+            const u = Math.random() * Math.PI * 2;
+            const v = Math.random() * Math.PI * 2;
+            a[i*3]   = (R + r * Math.cos(v)) * Math.cos(u);
+            a[i*3+1] = r * Math.sin(v);
+            a[i*3+2] = (R + r * Math.cos(v)) * Math.sin(u);
         }
-        requestAnimationFrame(draw);
-
-        window.addEventListener('resize', () => { ctx.setTransform(1, 0, 0, 1, 0, 0); buildDots(); });
-    })();
-
-    /* ────────────────────────────────────────
-       NAV DOT-MATRIX STATUS WIDGET
-       ──────────────────────────────────────── */
-    (function initNavMatrix() {
-        const canvas = document.getElementById('nav-matrix');
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        const messages = ['ONLINE', 'REMOTE', 'MÉRIDA MX'];
-        let msgIdx = 0;
-        const off = document.createElement('canvas');
-        const offCtx = off.getContext('2d');
-        off.width = 120; off.height = 16;
-
-        function renderMsg() {
-            // Black background for offscreen drawing in Dark Mode
-            offCtx.fillStyle = '#000'; offCtx.fillRect(0, 0, 120, 16);
-            offCtx.font = '600 10px "IBM Plex Mono"'; offCtx.fillStyle = '#fff'; offCtx.textBaseline = 'middle';
-            offCtx.fillText(messages[msgIdx], 4, 9);
-            const imgData = offCtx.getImageData(0, 0, 120, 16);
-            ctx.clearRect(0, 0, 120, 16);
-            for (let y = 0; y < 16; y += 3) {
-                for (let x = 0; x < 120; x += 3) {
-                    // Check for white pixels (text) in Dark Mode
-                    if (imgData.data[(y * 120 + x) * 4] > 180) {
-                        ctx.fillStyle = '#D41920'; ctx.fillRect(x, y, 2, 2);
-                    }
-                }
-            }
-            msgIdx = (msgIdx + 1) % messages.length;
+        return a;
+    }
+    function genGrid(n, w, d) {
+        const a = new Float32Array(n * 3);
+        for (let i = 0; i < n; i++) {
+            const x = (Math.random() - 0.5) * w;
+            const z = (Math.random() - 0.5) * d;
+            a[i*3]   = x;
+            a[i*3+1] = Math.sin(x * 0.5) * Math.cos(z * 0.5) * 0.5;
+            a[i*3+2] = z;
         }
-        renderMsg(); setInterval(renderMsg, 2500);
-    })();
-
-    /* ────────────────────────────────────────
-       SCROLL REVEAL
-       ──────────────────────────────────────── */
-    const srObs = new IntersectionObserver(entries => {
-        entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('vis'); });
-    }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
-    document.querySelectorAll('.sr').forEach(el => srObs.observe(el));
-
-    /* ────────────────────────────────────────
-       DYNAMIC TIMELINE SCROLL LOGIC
-       ──────────────────────────────────────── */
-    (function initTimelines() {
-        // Run logic for both timelines
-        const timelines = [
-            document.getElementById('experience-timeline'),
-            document.getElementById('education-timeline')
-        ];
-
-        function onScroll() {
-            const viewHeight = window.innerHeight;
-            // Activate line at 1/3 viewport height
-            const activeLineY = viewHeight * 0.6;
-
-            timelines.forEach(timeline => {
-                if (!timeline) return;
-                const rect = timeline.getBoundingClientRect();
-                const fill = timeline.querySelector('.exp-track-fill');
-                if (!fill) return;
-
-                // Calculate progress of the glowing line
-                let progress = 0;
-                if (rect.top <= activeLineY) {
-                    const scrolled = activeLineY - rect.top;
-                    progress = (scrolled / rect.height) * 100;
-                    progress = Math.max(0, Math.min(100, progress));
-                }
-                fill.style.height = `${progress}%`;
-
-                // Now check each dot
-                const fillBottomPixelY = rect.top + (rect.height * (progress / 100));
-                
-                const rows = timeline.querySelectorAll('.exp-row');
-                rows.forEach(row => {
-                    const dot = row.querySelector('.exp-timeline-dot');
-                    if (!dot) return;
-                    const dotRect = dot.getBoundingClientRect();
-                    const dotCenterY = dotRect.top + dotRect.height / 2;
-
-                    if (fillBottomPixelY >= dotCenterY) {
-                        row.classList.add('active');
-                        row.classList.add('filled-dot');
-                    } else if (fillBottomPixelY + 100 >= dotCenterY) {
-                        // Dot is close, start glowing lightly
-                        row.classList.add('active');
-                        row.classList.remove('filled-dot');
-                    } else {
-                        row.classList.remove('active');
-                        row.classList.remove('filled-dot');
-                    }
-                });
-            });
+        return a;
+    }
+    function genScattered(n, spread) {
+        const a = new Float32Array(n * 3);
+        for (let i = 0; i < n; i++) {
+            a[i*3]   = (Math.random() - 0.5) * spread;
+            a[i*3+1] = (Math.random() - 0.5) * spread;
+            a[i*3+2] = (Math.random() - 0.5) * spread;
         }
-
-        window.addEventListener('scroll', () => requestAnimationFrame(onScroll), { passive: true });
-        onScroll(); // Init
-    })();
-
-    /* ────────────────────────────────────────
-       MOBILE MENU
-       ──────────────────────────────────────── */
-    function toggleMenu() {
-        const el = document.querySelector('.nav-links');
-        if (!el.style.display || el.style.display === 'none') {
-            Object.assign(el.style, { display: 'flex', flexDirection: 'column', position: 'absolute', top: '70px', left: 0, right: 0, background: 'rgba(0,0,0,0.95)', padding: '2rem', gap: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(20px)' });
-        } else { el.removeAttribute('style'); }
+        return a;
     }
 
-    /* ────────────────────────────────────────
-       THREE.JS HERO SPHERE (Dark Mode Colors)
-       ──────────────────────────────────────── */
-    (function initSphere() {
-        const container = document.getElementById('hero-gl');
-        if (!container) return;
-        const scene = new THREE.Scene();
-        const cam = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 100);
-        cam.position.set(0, 0.5, 5);
-        const ren = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-        ren.setSize(container.clientWidth, container.clientHeight);
-        ren.setPixelRatio(Math.min(devicePixelRatio, 2));
-        container.appendChild(ren.domElement);
-        const g = new THREE.Group(); scene.add(g);
-        
-        // Changed to white wireframes for dark mode
-        g.add(new THREE.Mesh(new THREE.IcosahedronGeometry(1.8, 3), new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.15 })));
-        g.add(new THREE.Mesh(new THREE.IcosahedronGeometry(1.2, 1), new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.25 })));
-        for (let i = 0; i < 3; i++) {
-            const t = new THREE.Mesh(new THREE.TorusGeometry(2.4 + i * 0.3, 0.005, 8, 80), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.1 + i * 0.05 }));
-            t.rotation.x = 0.6 + i * 0.7; t.rotation.y = i * 0.5; t.userData = { rx: 0.001 * (i + 1), ry: 0.0015 * (i + 1) }; g.add(t);
-        }
-        const rr = new THREE.Mesh(new THREE.TorusGeometry(2.1, 0.01, 8, 60), new THREE.MeshBasicMaterial({ color: 0xD41920, transparent: true, opacity: 0.4 }));
-        rr.rotation.x = 1.2; rr.userData = { rx: -0.002, ry: 0.001 }; g.add(rr);
+    // ── Create Targets ──
+    const targets = [
+        genSphere(COUNT, 7),         // 0: Hero
+        genIcosahedron(COUNT, 7),    // 1: Mercor (angular)
+        genCube(COUNT, 10),          // 2: Outlier Code (structured)
+        genTorus(COUNT, 5.5, 2),     // 3: Outlier LATAM (ring)
+        genGrid(COUNT, 20, 15)       // 4: Country Credit (terrain)
+    ];
+    const scattered = genScattered(COUNT, 60);
 
-        let mx = 0, my = 0;
-        addEventListener('mousemove', e => { mx = (e.clientX / innerWidth - 0.5) * 0.25; my = (e.clientY / innerHeight - 0.5) * 0.12; });
-        (function anim() {
-            requestAnimationFrame(anim);
-            const t = performance.now() * 0.00025;
-            g.rotation.y = t + mx; g.rotation.x = Math.sin(t * 0.7) * 0.08 + my;
-            g.children.forEach(c => { if (c.userData?.rx) { c.rotation.x += c.userData.rx; c.rotation.y += c.userData.ry; } });
-            ren.render(scene, cam);
-        })();
-        addEventListener('resize', () => { cam.aspect = container.clientWidth / container.clientHeight; cam.updateProjectionMatrix(); ren.setSize(container.clientWidth, container.clientHeight); });
+    // ── Generate Circular Dot Texture ──
+    function createDotTexture() {
+        const c = document.createElement('canvas');
+        c.width = 64; c.height = 64;
+        const ctx = c.getContext('2d');
+        const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+        g.addColorStop(0, 'rgba(255,255,255,1)');
+        g.addColorStop(0.3, 'rgba(255,255,255,0.8)');
+        g.addColorStop(0.7, 'rgba(255,255,255,0.15)');
+        g.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, 64, 64);
+        return new THREE.CanvasTexture(c);
+    }
+    const dotTexture = createDotTexture();
+
+    // ── Create Particle System ──
+    const positions = new Float32Array(COUNT * 3);
+    // Start from scattered positions
+    for (let i = 0; i < COUNT * 3; i++) positions[i] = scattered[i];
+
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+    const material = new THREE.PointsMaterial({
+        size: 0.35,
+        map: dotTexture,
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.7,
+        sizeAttenuation: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+    });
+
+    const particles = new THREE.Points(geometry, material);
+    const pGroup = new THREE.Group();
+    pGroup.add(particles);
+    scene.add(pGroup);
+
+    // ── State ──
+    let activeTarget = 0;
+    let booted = false;
+    let mouseNX = 0, mouseNY = 0;
+    let smMouseX = 0, smMouseY = 0;
+    let currentSection = 'hero';
+    let targetGroupX = 0;
+    let targetOpacity = 0.7;
+    let targetScale = 1;
+
+    window.addEventListener('mousemove', e => {
+        mouseNX = (e.clientX / window.innerWidth) * 2 - 1;
+        mouseNY = -(e.clientY / window.innerHeight) * 2 + 1;
+        // Update cursor
+        const cur = document.getElementById('cursor');
+        cur.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
+        // Update HUD mouse coords
+        document.getElementById('hud-mouse').textContent =
+            `X:${String(e.clientX).padStart(4,'0')}  Y:${String(e.clientY).padStart(4,'0')}`;
+    });
+
+    // ── Animation Loop ──
+    function animate() {
+        requestAnimationFrame(animate);
+        if (!booted) return;
+
+        const t = performance.now() * 0.0001;
+        const target = targets[activeTarget];
+
+        // Smooth mouse
+        smMouseX += (mouseNX - smMouseX) * 0.04;
+        smMouseY += (mouseNY - smMouseY) * 0.04;
+
+        // Lerp positions toward target
+        const posArr = geometry.attributes.position.array;
+        for (let i = 0; i < COUNT * 3; i++) {
+            posArr[i] += (target[i] - posArr[i]) * 0.035;
+        }
+
+        // Mouse repulsion (project mouse into 3D approx)
+        const mx = smMouseX * 8;
+        const my = smMouseY * 6;
+        for (let i = 0; i < COUNT; i++) {
+            const idx = i * 3;
+            const dx = posArr[idx] - mx;
+            const dy = posArr[idx+1] - my;
+            const dz = posArr[idx+2];
+            const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+            if (dist < 3) {
+                const force = (3 - dist) * 0.3;
+                posArr[idx]   += (dx / dist) * force;
+                posArr[idx+1] += (dy / dist) * force;
+                posArr[idx+2] += (dz / dist) * force;
+            }
+        }
+        geometry.attributes.position.needsUpdate = true;
+
+        // Auto-rotate + mouse influence
+        pGroup.rotation.y = t * 0.5 + smMouseX * 0.15;
+        pGroup.rotation.x = smMouseY * 0.08;
+
+        // Smooth section-based offsets
+        pGroup.position.x += (targetGroupX - pGroup.position.x) * 0.025;
+        material.opacity += (targetOpacity - material.opacity) * 0.03;
+        const cs = pGroup.scale.x;
+        pGroup.scale.setScalar(cs + (targetScale - cs) * 0.03);
+
+        renderer.render(scene, camera);
+    }
+    animate();
+
+    /* ═══════════════════════════════════════════════════════════
+       2. BOOT SEQUENCE
+       ═══════════════════════════════════════════════════════════ */
+    (function boot() {
+        const lines = document.querySelectorAll('#boot-text span');
+        const overlay = document.getElementById('boot-overlay');
+        let delay = 800;
+
+        lines.forEach((line, i) => {
+            setTimeout(() => line.classList.add('vis'), delay + i * 200);
+        });
+
+        // After boot text, start particle assembly
+        setTimeout(() => {
+            booted = true; // Start animation loop rendering
+            activeTarget = 0; // Morph from scattered → sphere
+        }, delay + lines.length * 200 + 300);
+
+        // Fade boot overlay
+        setTimeout(() => {
+            overlay.classList.add('fade');
+            // Reveal hero elements
+            gsap.to('#hero-label', { opacity: 1, duration: 1, delay: 0.2 });
+            gsap.to('#hero-name', { opacity: 1, duration: 1, delay: 0.4 });
+            gsap.to('#hero-role', { opacity: 1, duration: 1, delay: 0.6 });
+            gsap.to('#hero-desc', { opacity: 1, duration: 1, delay: 0.8 });
+            gsap.to('#hero-scroll', { opacity: 1, duration: 1, delay: 1.2 });
+            gsap.to('#main-nav', { opacity: 1, duration: 1, delay: 1 });
+        }, delay + lines.length * 200 + 800);
+
+        // Remove overlay from DOM
+        setTimeout(() => overlay.remove(), delay + lines.length * 200 + 2000);
     })();
 
+    /* ═══════════════════════════════════════════════════════════
+       3. GSAP — EXPERIENCE SCROLLYTELLING
+       ═══════════════════════════════════════════════════════════ */
+    const expPanels = gsap.utils.toArray('.exp-panel');
+    const expLabels = ['01 / 04 — MERCOR', '02 / 04 — OUTLIER AI', '03 / 04 — OUTLIER AI (LATAM)', '04 / 04 — COUNTRY CREDIT CLUB'];
+    const morphMap = [1, 2, 3, 4]; // target indices for each panel
 
+    // Pin the sticky container
+    ScrollTrigger.create({
+        trigger: '#experience',
+        start: 'top top',
+        end: 'bottom bottom',
+        pin: '#exp-sticky',
+        onUpdate: self => {
+            const p = self.progress;
+            const idx = Math.min(Math.floor(p * expPanels.length), expPanels.length - 1);
+            activeTarget = morphMap[idx];
+            document.getElementById('exp-counter').textContent = expLabels[idx];
+            currentSection = 'experience';
+            targetGroupX = 5.5;
+            targetOpacity = 0.5;
+            targetScale = 1;
+            document.getElementById('hud-section').textContent = '[DOSSIER]';
+        },
+        onLeave: () => {
+            activeTarget = 0;
+            targetGroupX = 0;
+            targetOpacity = 0.35;
+            targetScale = 0.6;
+            currentSection = 'projects';
+            document.getElementById('hud-section').textContent = '[OPERATIONS]';
+        },
+        onLeaveBack: () => {
+            activeTarget = 0;
+            targetGroupX = 0;
+            targetOpacity = 0.7;
+            targetScale = 1;
+            currentSection = 'hero';
+            document.getElementById('hud-section').textContent = '[BOOT]';
+        }
+    });
+
+    // Timeline for panel transitions
+    const tlExp = gsap.timeline({
+        scrollTrigger: {
+            trigger: '#experience',
+            start: 'top top',
+            end: 'bottom bottom',
+            scrub: 1
+        }
+    });
+
+    expPanels.forEach((panel, i) => {
+        tlExp.fromTo(panel,
+            { autoAlpha: 0, x: -60, scale: 0.97 },
+            { autoAlpha: 1, x: 0, scale: 1, duration: 1, ease: 'power2.out' }
+        );
+        if (i < expPanels.length - 1) {
+            tlExp.to(panel,
+                { autoAlpha: 0, x: -60, scale: 1.03, duration: 0.6, ease: 'power2.in' },
+                '+=0.5'
+            );
+        }
+    });
+
+    /* ═══════════════════════════════════════════════════════════
+       4. GSAP — BENTO GRID REVEAL
+       ═══════════════════════════════════════════════════════════ */
+    gsap.utils.toArray('#projects .sr').forEach((el, i) => {
+        gsap.to(el, {
+            opacity: 1, y: 0, duration: 1, ease: 'power2.out',
+            scrollTrigger: {
+                trigger: el,
+                start: 'top 85%',
+                toggleActions: 'play none none none'
+            },
+            delay: i * 0.1
+        });
+    });
+
+    // Animate status bars when visible
+    ScrollTrigger.create({
+        trigger: '#projects',
+        start: 'top 60%',
+        onEnter: () => {
+            document.getElementById('uptime-bar').style.width = '97%';
+            document.getElementById('signal-bar').style.width = '84%';
+        }
+    });
+
+    // Capabilities reveal
+    gsap.utils.toArray('#capabilities .sr').forEach(el => {
+        gsap.to(el, {
+            opacity: 1, y: 0, duration: 1,
+            scrollTrigger: { trigger: el, start: 'top 85%' }
+        });
+    });
+
+    // Section tracking for HUD
+    ScrollTrigger.create({
+        trigger: '#projects',
+        start: 'top center',
+        end: 'bottom center',
+        onEnter: () => document.getElementById('hud-section').textContent = '[OPERATIONS]',
+    });
+    ScrollTrigger.create({
+        trigger: '#capabilities',
+        start: 'top center',
+        end: 'bottom center',
+        onEnter: () => {
+            document.getElementById('hud-section').textContent = '[SYSTEMS]';
+            activeTarget = 0; targetOpacity = 0.25; targetScale = 0.5;
+        }
+    });
+    ScrollTrigger.create({
+        trigger: '#contact',
+        start: 'top center',
+        onEnter: () => {
+            document.getElementById('hud-section').textContent = '[TRANSMISSION]';
+            targetOpacity = 0.15;
+        }
+    });
+
+    /* ═══════════════════════════════════════════════════════════
+       5. BENTO WIREFRAME WIDGET (separate Three.js scene)
+       ═══════════════════════════════════════════════════════════ */
+    (function initWireframe() {
+        const cont = document.getElementById('wireframe-container');
+        if (!cont) return;
+        const w = cont.clientWidth || 300;
+        const h = cont.clientHeight || 280;
+
+        const sc = new THREE.Scene();
+        const cam = new THREE.PerspectiveCamera(50, w / h, 0.1, 100);
+        cam.position.z = 4;
+
+        const ren = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+        ren.setSize(w, h);
+        ren.setPixelRatio(Math.min(devicePixelRatio, 2));
+        cont.appendChild(ren.domElement);
+
+        const geo = new THREE.TorusKnotGeometry(1, 0.35, 100, 16);
+        const mat = new THREE.MeshBasicMaterial({ wireframe: true, color: 0xffffff, transparent: true, opacity: 0.35 });
+        const mesh = new THREE.Mesh(geo, mat);
+        sc.add(mesh);
+
+        function a() {
+            requestAnimationFrame(a);
+            mesh.rotation.x += 0.003;
+            mesh.rotation.y += 0.005;
+            ren.render(sc, cam);
+        }
+        a();
+    })();
+
+    /* ═══════════════════════════════════════════════════════════
+       6. HUD — CLOCK & LIVE COORDS
+       ═══════════════════════════════════════════════════════════ */
+    setInterval(() => {
+        const d = new Date();
+        document.getElementById('hud-clock').textContent =
+            [d.getHours(), d.getMinutes(), d.getSeconds()].map(v => String(v).padStart(2,'0')).join(':');
+    }, 1000);
+
+    // Live random coordinate jitter in status panel
+    setInterval(() => {
+        const el = document.getElementById('live-coords');
+        if (el) {
+            el.innerHTML = `X: ${(Math.random()*9999).toFixed(0).padStart(4,'0')} &nbsp; Y: ${(Math.random()*9999).toFixed(0).padStart(4,'0')}<br>Z: ${(Math.random()*9999).toFixed(0).padStart(4,'0')} &nbsp; Δ: ${(Math.random()*0.01).toFixed(4)}`;
+        }
+    }, 800);
+
+    // Scroll progress bar
+    window.addEventListener('scroll', () => {
+        const p = (window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100;
+        document.getElementById('scroll-thumb').style.height = p + '%';
+    });
+
+    // Resize handler
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        ScrollTrigger.refresh();
+    });
     </script>
 </body>
 </html>
